@@ -46,12 +46,11 @@ where $\mu_\sigma$ is the average spectral norm across all layers. The hyperpara
 
 By incorporating SNVR on top of SNR, we aim to achieve more balanced layer-wise sensitivities and ultimately enhance the network’s generalization performance.
 
-
-## Dataset
-- CIFAR10
-- CIFAR100
-- SVHN
-- Tiny-Imagenet200
+## Components
+- **sgdsnr.py** - script for SNVR-adapted optimizer based on SGD.
+- **main.py** - script for main experiments.
+- **utils.py** - script for utilities, containing train, test, load and saving
+- **config.py** - script for configurations.
 
 ## Usage
 ```python
