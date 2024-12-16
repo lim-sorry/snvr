@@ -1,13 +1,11 @@
 export PYTHONUNBUFFERED=1
 export OMP_NUM_THREADS=1
 export CUBLAS_WORKSPACE_CONFIG=:4096:8
-# if using windows os
-# set CUBLAS_WORKSPACE_CONFIG=:4096:8 
 
 SLURM_ARRAY_TASK_ID=$1
-src_path=/home/js/repo/TempBalance
-ckpt_src_path=/home/js/repo/TempBalance/ckpt
-data_path=/home/js/repo/TempBalance/data
+data_path=$data_path
+src_path=$src_path
+ckpt_src_path=$ckpt_src_path
 
 cfg=$(sed -n "$SLURM_ARRAY_TASK_ID"p ${src_path}/bash_scripts/config/test.tsv)
 

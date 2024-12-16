@@ -60,24 +60,42 @@ from sgdsnr import SGDSNR
 model = ...
 # initialize SGD-based SGDSNR optimizer
 optimizer = SGDSNR(
+    model.parameters(),
     ...
     spectrum_regularization=0.1,
     spectrum_variance_regularization=0.1,
     )
 # training loop
 for epoch in range(1, ...):
-    ...
     train()
     test()
     ...
 ```
 
 ## Experiments 
-Set up absolute paths for code repository, and checkpoints.
 ```bash
-export data_path=PATH_TO_DATA
-export src_path=PATH_TO_CODE_REPO
-export ckpt_src_path=PATH_TO_CKPT
+# Set up absolute paths for code repository, and checkpoints.
+export src_path=...
+export ckpt_src_path=...
+export data_path=...
 
+# run test.sh
 bash bash_scripts/test.sh
 ```
+
+## Dependency
+- torch==2.2.0
+- torchvision==0.17.0
+```bash
+pip install torch==2.2.0 torchvision==0.17.0 --index-url https://download.pytorch.org/whl/cu121
+```
+
+## References
+
+- Zhou, Y., Pang, T., Liu, K., Martin, C. H., Mahoney, M. W., & Yang, Y. (2023).  
+  *Temperature Balancing, Layer-wise Weight Analysis, and Neural Network Training*.  
+  [arXiv:2312.00359](https://arxiv.org/abs/2312.00359)
+
+- Yoshida, Y., & Miyato, T. (2017).  
+  *Spectral Norm Regularization for Improving the Generalizability of Deep Learning*.  
+  [arXiv:1705.10941](https://arxiv.org/abs/1705.10941)

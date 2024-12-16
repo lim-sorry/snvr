@@ -29,15 +29,11 @@ parser.add_argument('--usage',          type=float,      default=1.0,           
 parser.add_argument('--lr-sche',        type=str,        default='cosine',                       choices=['cosine'])
 parser.add_argument('--weight-decay',   type=float,      default=1e-4) # 5e-4
 parser.add_argument('--ckpt-path',      type=str,        default='',                            help='path to checkpoints')
-# parser.add_argument('--print-tofile',   default=False,  type=lambda x: (str(x).lower() == 'true'), help='print to file')
 
 parser.add_argument('--batch-size',   type=int,          default=128) # 5e-4
 parser.add_argument('--datadir',        type=str,        default='',                            help='directory of dataset')
 parser.add_argument('--optim-type',     type=str,        default='SGD',                        help='type of optimizer')
-# parser.add_argument('--resume',         type=str,        default='',                           help='resume from checkpoint')
 parser.add_argument('--seed',           type=int,        default=42) 
-# parser.add_argument('--ww-interval',    type=int,        default=1)
-# parser.add_argument('--epochs-to-save',  type=int,       nargs='+',  default=[])
 
 # spectral regularization related
 parser.add_argument('--sg',                 type=float, default=0.01, help='spectrum regularization')
