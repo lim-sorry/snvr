@@ -24,7 +24,7 @@ Here, $x^{\ell} \in \mathbb{R}^{n_\ell}$ represents the output of the $\ell$-th 
 
 **Spectral Norm Regularization (SNR)** penalizes the spectral norm of each layer’s weight matrix $W^{\ell}$, thereby helping reduce the overall sensitivity of the network to input perturbations.
 
-Given training data $\{x_i, y_i\}_{i=1}^K$, here is the SNR-adapted objective function:
+Given training data $\\{x_i, y_i\\}_{i=1}^K$, here is the SNR-adapted objective function:
 
 $$
 \min_\theta \frac{1}{K}\sum_{i=1}^K L_{ce}(f_\theta(x_i), y_i) + \frac{\lambda_{SNR}}{2} \sum_{\ell=1}^L (\sigma(W^{\ell}))^2
