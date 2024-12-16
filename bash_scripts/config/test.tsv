@@ -1,0 +1,87 @@
+netType	width	depth	dataset	usage	num_epochs	lr_sche	seed	lr	weight_decay	sg	svg	optim_type	
+													
+###_CIFAR100_baseline													
+resnet	1	18	cifar100	1.0	200	cosine	43,37,13,51,71	0.1	0.0005	0	0	SGDSNR	76.15 ± 0.25
+resnet	1	34	cifar100	1.0	200	cosine	43,37,13,51,71	0.05	0.0005	0	0	SGDSNR	
+vgg_cifar	1	16	cifar100	1.0	200	cosine	43,37,13,51,71	0.05	0.0005	0	0	SGDSNR	
+vgg_cifar	1	19	cifar100	1.0	200	cosine	43,37,13,51,71	0.05	0.0005	0	0	SGDSNR	
+###_CIFAR100_SNR													
+resnet	1	18	cifar100	1.0	200	cosine	43,37,13,51,71	0.1	0.0005	0.01	0	SGDSNR	76.51 ± 0.27
+resnet	1	34	cifar100	1.0	200	cosine	43,37,13,51,71	0.1	0.0005	0.015	0	SGDSNR	
+vgg_cifar	1	16	cifar100	1.0	200	cosine	43,37,13,51,71	0.05	0.0005	0.005	0	SGDSNR	
+vgg_cifar	1	19	cifar100	1.0	200	cosine	43,37,13,51,71	0.05	0.0005	0.01	0	SGDSNR	
+###_CIFAR100_SNVR													
+resnet	1	18	cifar100	1.0	200	cosine	43,37,13,51,71	0.1	0.0005	0.01	1.0	SGDSNR	77.11 ± 0.15
+resnet	1	18	cifar100	1.0	200	cosine	43,37,13,51,71	0.1	0.0005	0.01	0.1	SGDSNR	77.06 ± 0.25
+resnet	1	18	cifar100	1.0	200	cosine	43,37,13,51,71	0.1	0.0005	0.01	0.01	SGDSNR	
+resnet	1	34	cifar100	1.0	200	cosine	43,37,13,51,71	0.1	0.0005	0.015	1.0	SGDSNR	
+vgg_cifar	1	16	cifar100	1.0	200	cosine	43,37,13,51,71	0.05	0.0005	0.005	0.1	SGDSNR	
+vgg_cifar	1	19	cifar100	1.0	200	cosine	43,37,13,51,71	0.05	0.0005	0.01	0.01	SGDSNR	
+###_CIFAR100_Usage0.5													
+resnet	1	18	cifar100	0.5	200	cosine	43,37,13,51,71	0.1	0.0005	0	0	SGDSNR	68.23 ± 0.31
+resnet	1	18	cifar100	0.5	200	cosine	43,37,13,51,71	0.1	0.0005	0.01	0	SGDSNR	69.30 ± 0.20
+resnet	1	18	cifar100	0.5	200	cosine	43,37,13,51,71	0.1	0.0005	0.01	1.0	SGDSNR	69.72 ± 0.46
+resnet	1	18	cifar100	0.5	200	cosine	43,37,13,51,71	0.1	0.0005	0.01	0.1	SGDSNR	69.38 ± 0.19
+resnet	1	18	cifar100	0.5	200	cosine	43,37,13,51,71	0.1	0.0005	0.01	0.01	SGDSNR	69.40 ± 0.38
+resnet	1	34	cifar100	0.5	200	cosine	43,37,13,51,71	0.1	0.0005	0	0	SGDSNR	67.00 ± 0.39
+resnet	1	34	cifar100	0.5	200	cosine	43,37,13,51,71	0.05	0.0005	0	0	SGDSNR	67.24 ± 0.52
+resnet	1	34	cifar100	0.5	200	cosine	43,37,13,51,71	0.01	0.0005	0	0	SGDSNR	63.52 ± 0.25
+resnet	1	34	cifar100	0.5	200	cosine	43,37,13,51,71	0.1	0.0005	0.05	0	SGDSNR	69.79 ± 0.22*
+resnet	1	34	cifar100	0.5	200	cosine	43,37,13,51,71	0.1	0.0005	0.015	0	SGDSNR	70.02 ± 0.22
+resnet	1	34	cifar100	0.5	200	cosine	43,37,13,51,71	0.1	0.0005	0.01	0	SGDSNR	70.00 ± 0.35*
+resnet	1	34	cifar100	0.5	200	cosine	43,37,13,51,71	0.05	0.0005	0.05	0	SGDSNR	69.71 ± 0.28
+resnet	1	34	cifar100	0.5	200	cosine	43,37,13,51,71	0.05	0.0005	0.015	0	SGDSNR	69.76 ± 0.17
+resnet	1	34	cifar100	0.5	200	cosine	43,37,13,51,71	0.05	0.0005	0.01	0	SGDSNR	69.47 ± 0.18
+resnet	1	34	cifar100	0.5	200	cosine	43,37,13,51,71	0.1	0.0005	0.015	1.0	SGDSNR	71.08 ± 0.19
+resnet	1	34	cifar100	0.5	200	cosine	43,37,13,51,71	0.1	0.0005	0.01	1.0	SGDSNR	70.91 ± 0.23*
+resnet	1	34	cifar100	0.5	200	cosine	43,37,13,51,71	0.05	0.0005	0.015	1.0	SGDSNR	70.33 ± 0.22
+###_CIFAR100_Usage0.2													
+resnet	1	18	cifar100	0.2	200	cosine	43,37,13,51,71	0.1	0.0005	0	0	SGDSNR	49.22 ± 1.22
+resnet	1	18	cifar100	0.2	200	cosine	43,37,13,51,71	0.1	0.0005	0.01	0	SGDSNR	53.64 ± 1.03
+resnet	1	18	cifar100	0.2	200	cosine	43,37,13,51,71	0.1	0.0005	0.01	1.0	SGDSNR	52.49 ± 0.40
+resnet	1	18	cifar100	0.2	200	cosine	43,37,13,51,71	0.1	0.0005	0.01	0.1	SGDSNR	53.57 ± 0.91
+resnet	1	18	cifar100	0.2	200	cosine	43,37,13,51,71	0.1	0.0005	0.01	0.01	SGDSNR	54.10 ± 0.61
+resnet	1	34	cifar100	0.2	200	cosine	43,37,13,51,71,24,68,16,77,98	0.1	0.0005	0	0	SGDSNR	44.39 ± 3.90*
+resnet	1	34	cifar100	0.2	200	cosine	43,37,13,51,71,24,68,16,77,98	0.05	0.0005	0	0	SGDSNR	46.53 ± 1.46
+resnet	1	34	cifar100	0.2	200	cosine	43,37,13,51,71,24,68,16,77,98	0.1	0.0005	0.015	0	SGDSNR	54.08 ± 0.87
+resnet	1	34	cifar100	0.2	200	cosine	43,37,13,51,71,24,68,16,77,98	0.1	0.0005	0.015	1.0	SGDSNR	55.02 ± 0.96
+###_CIFAR100_Usage0.1													
+resnet	1	34	cifar100	0.1	200	cosine	43,37,13,51,71,24,68,16,77,98	0.05	0.0005	0	0	SGDSNR	
+resnet	1	34	cifar100	0.1	200	cosine	43,37,13,51,71,24,68,16,77,98	0.1	0.0005	0.015	0	SGDSNR	
+resnet	1	34	cifar100	0.1	200	cosine	43,37,13,51,71,24,68,16,77,98	0.1	0.0005	0.015	1.0	SGDSNR	
+													
+###_CIFAR10_baseline													
+resnet	1	18	cifar10	1.0	200	cosine	43,37,13,51,71	0.1	0.0005	0	0	SGDSNR	
+vgg_cifar	1	16	cifar10	1.0	200	cosine	43,37,13,51,71	0.1	0.0005	0	0	SGDSNR	
+###_CIFAR10_SNR													
+resnet	1	18	cifar10	1.0	200	cosine	43,37,13,51,71	0.1	0.0005	0.001	0	SGDSNR	
+vgg_cifar	1	16	cifar10	1.0	200	cosine	43,37,13,51,71	0.05	0.0005	0.005	0	SGDSNR	
+###_CIFAR10_SNVR													
+resnet	1	18	cifar10	1.0	200	cosine	43,37,13,51,71	0.1	0.0005	0.001	0.01	SGDSNR	
+vgg_cifar	1	16	cifar10	1.0	200	cosine	43,37,13,51,71	0.05	0.0005	0.005	0.01	SGDSNR	
+													
+###_SVHN_baseline													
+resnet	1	18	svhn	1.0	200	cosine	43,37,13,51,71	0.1	0.0005	0	0	SGDSNR	
+vgg_cifar	1	16	svhn	1.0	200	cosine	43,37,13,51,71	0.05	0.0005	0	0	SGDSNR	
+###_SVHN_SNR													
+resnet	1	18	svhn	1.0	200	cosine	43,37,13,51,71	0.1	0.0005	0.005	0	SGDSNR	
+vgg_cifar	1	16	svhn	1.0	200	cosine	43,37,13,51,71	0.05	0.0005	0.01	0	SGDSNR	
+###_SVHN_SNVR													
+resnet	1	18	svhn	1.0	200	cosine	43,37,13,51,71	0.1	0.0005	0.005	0.1	SGDSNR	
+vgg_cifar	1	16	svhn	1.0	200	cosine	43,37,13,51,71	0.05	0.0005	0.01	0.01	SGDSNR	
+													
+###_TIN_baseline													
+resnet_tiny_imagenet	1	18	tiny-imagenet-200	1.0	200	cosine	43,37,13,51,71	0.1	0.0005	0	0	SGDSNR	
+resnet_tiny_imagenet	1	34	tiny-imagenet-200	1.0	200	cosine	43,37,13,51,71	0.1	0.0005	0	0	SGDSNR	
+wide_resnet	8	16	tiny-imagenet-200	1.0	200	cosine	43,37,13,51,71	0.1	0.0005	0	0	SGDSNR	
+wide_resnet	6	28	tiny-imagenet-200	1.0	200	cosine	43,37,13,51,71	0.05	0.0005	0	0	SGDSNR	
+###_TIN_SNR													
+resnet_tiny_imagenet	1	18	tiny-imagenet-200	1.0	200	cosine	43,37,13,51,71	0.1	0.0005	0.01	0	SGDSNR	
+resnet_tiny_imagenet	1	34	tiny-imagenet-200	1.0	200	cosine	43,37,13,51,71	0.1	0.0005	0.01	0	SGDSNR	
+wide_resnet	8	16	tiny-imagenet-200	1.0	200	cosine	43,37,13,51,71	0.1	0.0005	0.0001	0	SGDSNR	
+wide_resnet	6	28	tiny-imagenet-200	1.0	200	cosine	43,37,13,51,71	0.1	0.0005	0.0001	0	SGDSNR	
+###_TIN_SNR													
+resnet_tiny_imagenet	1	18	tiny-imagenet-200	1.0	200	cosine	43,37,13,51,71	0.1	0.0005	0.01	1.0	SGDSNR	
+resnet_tiny_imagenet	1	34	tiny-imagenet-200	1.0	200	cosine	43,37,13,51,71	0.1	0.0005	0.01	not	SGDSNR	
+wide_resnet	8	16	tiny-imagenet-200	1.0	200	cosine	43,37,13,51,71	0.1	0.0005	0.0001	not	SGDSNR	
+wide_resnet	6	28	tiny-imagenet-200	1.0	200	cosine	43,37,13,51,71	0.1	0.0005	0.0001	not	SGDSNR	
