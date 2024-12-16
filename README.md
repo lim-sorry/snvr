@@ -27,7 +27,7 @@ Here, $x^{\ell} \in \mathbb{R}^{n_\ell}$ represents the output of the $\ell$-th 
 Given training data $\{x_i, y_i\}_{i=1}^K$, here is the SNR-adapted objective function:
 
 $$
-\min_\theta \frac{1}{K}\sum_{i=1}^K L_{ce}(f_\theta(x_i), y_i) \;+\; \frac{\lambda_{SNR}}{2} \sum_{\ell=1}^L (\sigma(W^{\ell}))^2 
+\min_\theta \frac{1}{K}\sum_{i=1}^K L_{ce}(f_\theta(x_i), y_i) + \frac{\lambda_{SNR}}{2} \sum_{\ell=1}^L (\sigma(W^{\ell}))^2
 $$
 
 where $L_{ce}$ is the cross-entropy loss commonly chosen for classification tasks, and $\sigma(W^{\ell})$ is the spectral norm of the weight matrix at layer $\ell$. The hyperparameter $\lambda_{SNR}$ controls the strength of SNR.
@@ -39,7 +39,7 @@ To further improve generalization and address imbalances in layer-wise sensitivi
 Combining these components, we define the following objective function:
 
 $$
-\min_\theta \frac{1}{K}\sum_{i=1}^K L_{ce}(f_\theta(x_i), y_i) \;+\; \frac{\lambda_{SNR}}{2} \sum_{\ell=1}^L (\sigma(W^{\ell}))^2 \;+\; \frac{\lambda_{SNVR}}{2} \sum_{\ell=1}^L (\sigma(W^{\ell}) - \mu_\sigma)^2,
+\min_\theta \frac{1}{K}\sum_{i=1}^K L_{ce}(f_\theta(x_i), y_i) + \frac{\lambda_{SNR}}{2} \sum_{\ell=1}^L (\sigma(W^{\ell}))^2 + \frac{\lambda_{SNVR}}{2} \sum_{\ell=1}^L (\sigma(W^{\ell}) - \mu_\sigma)^2
 $$
 
 where $\mu_\sigma$ is the average spectral norm across all layers. The hyperparameter $\lambda_{SNVR}$ controls the strength of SNVR.
