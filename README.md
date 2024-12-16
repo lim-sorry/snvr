@@ -18,7 +18,7 @@ $$
 x^{\ell} = f_{\ell}(W^{\ell} x^{\ell-1} + b^{\ell}), \quad \ell = 1, \dots, L
 $$
 
-Here, $x^{\ell} \in \mathbb{R}^{n_\ell}$ represents the output of the $\ell$-th layer, and $f_{\ell}: \mathbb{R}^{n_\ell} \to \mathbb{R}^{n_\ell}$ is the layer’s activation function. Each layer is defined by the weight matrix $W^{\ell} \in \mathbb{R}^{n_\ell \times n_{\ell-1}}$ and the bias vector $b^{\ell} \in \mathbb{R}^{n_\ell}$. Collecting all parameters into $\Theta = \{W^{\ell}, b^{\ell}\}_{\ell=1}^L$, the network function $f_\theta : \mathbb{R}^{n_0} \to \mathbb{R}^{n_L}$ is given by $f_\theta(x^{0}) = x^{L}$.
+Here, $x^{\ell} \in \mathbb{R}^{n_\ell}$ represents the output of the $\ell$-th layer, and $f_{\ell}: \mathbb{R}^{n_\ell} \to \mathbb{R}^{n_\ell}$ is the layer’s activation function. Each layer is defined by the weight matrix $W^{\ell} \in \mathbb{R}^{n_\ell \times n_{\ell-1}}$ and the bias vector $b^{\ell} \in \mathbb{R}^{n_\ell}$. Collecting all parameters into $\Theta = \{W^{\ell}, b^{\ell}\}$, the network function $f_\theta : \mathbb{R}^{n_0} \to \mathbb{R}^{n_L}$ is given by $f_\theta(x^{0}) = x^{L}$.
 <br/>
 <br/>
 
