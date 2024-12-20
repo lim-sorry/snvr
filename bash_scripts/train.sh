@@ -29,10 +29,9 @@ base_path=${ckpt_src_path}/${dataset}/usage${usage}/${netType}_${depth}_${width}
 base_path=${base_path}/${optim_type}_init${lr}_${lr_sche}
 base_path=${base_path}/snr_sg${sg}_snvr_svg${svg}
 
-# array=($(echo $seed_lst | tr ',' ' '))
-
+array=$(echo $seed_lst | tr ',' ' ')
 # run five random seeds 
-for seed in 43 37 13 51 71 #24 68 16 77 98
+for seed in $array
     do 
         echo run experiment with seed $seed
         ckpt_folder=epochs${num_epochs}_wd${weight_decay}_seed${seed}
