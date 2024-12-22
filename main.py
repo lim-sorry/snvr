@@ -24,7 +24,7 @@ parser.add_argument('--net-type',       type=str,        default='wide-resnet', 
 parser.add_argument('--depth',          type=int,        default=28,                           help='depth of model')
 parser.add_argument('--num-epochs',     type=int,        default=200,                          help='number of epochs')
 parser.add_argument('--widen-factor',   type=float,      default=1,                           help='width of model')
-parser.add_argument('--dataset',        type=str,        default='cifar10',                    help='dataset = [cifar10/cifar100]')
+parser.add_argument('--dataset',        type=str,        default='cifar100',                    help='dataset = [cifar10/cifar100]')
 parser.add_argument('--usage',          type=float,      default=1.0,                          help='dataset usage')
 parser.add_argument('--lr-sche',        type=str,        default='cosine',                       choices=['cosine'])
 parser.add_argument('--weight-decay',   type=float,      default=1e-4) # 5e-4
