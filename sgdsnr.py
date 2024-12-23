@@ -22,62 +22,24 @@ def compute_weight(weight, do_power_iteration=True, n_power_iterations=5):
 
     return sn, uv
 
-
 class SGDSNR(Optimizer):
-    r"""Implements stochastic gradient descent (optionally with momentum).
-
-    Nesterov momentum is based on the formula from
-    `On the importance of initialization and momentum in deep learning`__.
-
-    Args:
+    r"""Implements stochastic gradient descent with spectrum regularization.
+    Arguments:
         params (iterable): iterable of parameters to optimize or dicts defining
             parameter groups
         lr (float): learning rate
+        snr (float, optional): spectrum regularization factor (default: 0)
+        snvr (float, optional): spectrum variance regularization factor (default: 0)
         momentum (float, optional): momentum factor (default: 0)
-        weight_decay (float, optional): weight decay (L2 penalty) (default: 0)
         dampening (float, optional): dampening for momentum (default: 0)
+        weight_decay (float, optional): weight decay (L2 penalty) (default: 0)
         nesterov (bool, optional): enables Nesterov momentum (default: False)
-
-    Example:
-        >>> optimizer = torch.optim.SGD(model.parameters(), lr=0.1, momentum=0.9)
-        >>> optimizer.zero_grad()
-        >>> loss_fn(model(input), target).backward()
-        >>> optimizer.step()
-
-    __ http://www.cs.toronto.edu/%7Ehinton/absps/momentum.pdf
-
-    .. note::
-        The implementation of SGD with Momentum/Nesterov subtly differs from
-        Sutskever et. al. and implementations in some other frameworks.
-
-        Considering the specific case of Momentum, the update can be written as
-
-        .. math::
-            \begin{aligned}
-                v_{t+1} & = \mu * v_{t} + g_{t+1}, \\
-                p_{t+1} & = p_{t} - \text{lr} * v_{t+1},
-            \end{aligned}
-
-        where :math:`p`, :math:`g`, :math:`v` and :math:`\mu` denote the
-        parameters, gradient, velocity, and momentum respectively.
-
-        This is in contrast to Sutskever et. al. and
-        other frameworks which employ an update of the form
-
-        .. math::
-            \begin{aligned}
-                v_{t+1} & = \mu * v_{t} + \text{lr} * g_{t+1}, \\
-                p_{t+1} & = p_{t} - v_{t+1}.
-            \end{aligned}
-
-        The Nesterov version is analogously modified.
     """
-
     def __init__(self, params, lr=required, 
                     momentum=0, dampening=0,
                     weight_decay=0, nesterov=False, 
-                    spectrum_regularization=0, 
-                    spectrum_variance_regularization=0,
+                    snr=0, 
+                    snvr=0,
                     differentiable: bool = False):
         if lr is not required and lr < 0.0:
             raise ValueError("Invalid learning rate: {}".format(lr))
@@ -88,8 +50,8 @@ class SGDSNR(Optimizer):
 
         defaults = dict(lr=lr, momentum=momentum, dampening=dampening,
                         weight_decay=weight_decay, nesterov=nesterov, 
-                        spectrum_regularization=spectrum_regularization,
-                        spectrum_variance_regularization=spectrum_variance_regularization)
+                        spectrum_regularization=snr,
+                        spectrum_variance_regularization=snvr)
         if nesterov and (momentum <= 0 or dampening != 0):
             raise ValueError("Nesterov momentum requires a momentum and zero dampening")
         super(SGDSNR, self).__init__(params, defaults)
@@ -100,7 +62,8 @@ class SGDSNR(Optimizer):
             group.setdefault('nesterov', False)
             group.setdefault('spectrum_regularization', 0)
             group.setdefault('spectrum_variance_regularization', 0)
-            
+            group.setdefault('differentiable', False)
+            group.setdefault('dampening', 0)            
 
     @torch.no_grad()
     def step(self, closure=None):

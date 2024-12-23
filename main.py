@@ -1,150 +1,110 @@
 from __future__ import print_function
+import json
 import os
 import sys
 import time
 import argparse
-import random
 import torch
 import torch.nn as nn
 import numpy as np
-import torch.optim as optim
-import torchvision
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 from pathlib import Path
 from os.path import join
 from sgdsnr import SGDSNR
 import config as cf
-from utils import CustomDataset, train, test, getNetwork, save_args_to_file
+from utils import CustomDataset, set_seed, train, test, getNetwork
 from sklearn.model_selection import train_test_split
 
-parser = argparse.ArgumentParser(description='PyTorch CIFAR-10 Training')
-parser.add_argument('--lr',             type=float,      default=0.01,                         help='learning_rate')
-parser.add_argument('--net-type',       type=str,        default='wide-resnet',                help='model')
-parser.add_argument('--depth',          type=int,        default=28,                           help='depth of model')
-parser.add_argument('--num-epochs',     type=int,        default=200,                          help='number of epochs')
-parser.add_argument('--widen-factor',   type=float,      default=1,                           help='width of model')
-parser.add_argument('--dataset',        type=str,        default='cifar100',                    help='dataset = [cifar10/cifar100]')
-parser.add_argument('--usage',          type=float,      default=1.0,                          help='dataset usage')
-parser.add_argument('--lr-sche',        type=str,        default='cosine',                       choices=['cosine'])
-parser.add_argument('--weight-decay',   type=float,      default=1e-4) # 5e-4
-parser.add_argument('--ckpt-path',      type=str,        default='',                            help='path to checkpoints')
+# Argument Parser
+parser = argparse.ArgumentParser()
+parser.add_argument('--dataset', default='tiny-imagenet-200', help='cifar10 | cifar100 | svhn | tiny-imagenet-200')
+parser.add_argument('--usage', default=0.5, type=float, help='Usage ratio of the training set')
+parser.add_argument('--model', default='resnet', help='resnet')
+parser.add_argument('--depth', default=18, type=int, help='depth of the network')
+parser.add_argument('--lr', default=0.1, type=float, help='learning rate')
+parser.add_argument('--snr', default=0.0, type=float, help='spectrum regularization')
+parser.add_argument('--snvr', default=0.0, type=float, help='spectrum variance regularization')
+parser.add_argument('--seed', default=42, type=int, help='Random seed')
 
-parser.add_argument('--batch-size',   type=int,          default=128) # 5e-4
-parser.add_argument('--datadir',        type=str,        default='',                            help='directory of dataset')
-parser.add_argument('--optim-type',     type=str,        default='SGD',                        help='type of optimizer')
-parser.add_argument('--seed',           type=int,        default=42) 
+parser.add_argument('--ckpt_path', default='ckpt/test', help='Checkpoint path')
+parser.add_argument('--data_path', default='data', help='Data path')
+parser.add_argument('--remark', default='', help='Remark for the experiment')
 
-# spectral regularization related
-parser.add_argument('--sg',                 type=float, default=0.01, help='spectrum regularization')
-parser.add_argument('--svg',                type=float, default=0.0,  help='spectrum variance regularization')
+# default arguments
+parser.add_argument('--num_epochs', default=200, type=int, help='Number of epochs')
+parser.add_argument('--optim_type', default='SGDSNR', help='SGD | SGDSNR | Adam')
+parser.add_argument('--weight_decay', default=0.0005, type=float, help='Weight Decay')
+parser.add_argument('--lr_sche', default='cosine', help='cosine')
 
 args = parser.parse_args()
-
 print(args)
-# Save the arguments to a file
-if os.path.exists(join(args.ckpt_path, "training_stats.npy")):
-    exit()
-save_args_to_file(args, join(args.ckpt_path, 'args.json'))
-Path(args.ckpt_path).mkdir(parents=True, exist_ok=True)
 
-def set_seed(seed=42):
-    print(f"=====> Set the random seed as {seed}")
-    np.random.seed(seed)
-    random.seed(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
-    # When running on the CuDNN backend, two further options must be set
-    torch.backends.cudnn.enabled = True
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = False
-    torch.use_deterministic_algorithms(True)
-    # Set a fixed value for the hash seed
-    os.environ["PYTHONHASHSEED"] = str(seed)
-    
+# check if already trained in training_stats.pth
+if Path(join(args.ckpt_path, "training_stats.pth")).exists():
+    # check if epoch is already finished
+    training_stats = torch.load(join(args.ckpt_path, "training_stats.pth"))
+    if training_stats['epoch'] == args.num_epochs:
+        print(f"seed {args.seed} already trained")
+        sys.exit(0)
+else:
+    os.makedirs(args.ckpt_path, exist_ok=True)
 
-# seed fix
+# save args to file
+with open(join(args.ckpt_path, 'args.json'), 'w') as f:
+    json.dump(vars(args), f)
+
+# set seed
 set_seed(args.seed)
 
-# Data Loader
+# Data Preparation
 print('\n[Phase 1] : Data Preparation')
-print(f"prepare preprocessing, {args.dataset}")
-
-data_path = join(args.datadir, args.dataset)
-if(args.dataset == 'cifar10'):
-    print("| Preparing CIFAR-10 dataset...")
-    sys.stdout.write("| ")
-    trainset_full = torchvision.datasets.CIFAR10(root=data_path, train=True, 
-                                            download=True, 
-                                            transform=None)
-    testset = torchvision.datasets.CIFAR10(root=data_path, train=False, 
-                                            download=False, 
-                                            transform=None)
+print(f"| Preparing {args.dataset} dataset")
+dataset_path = join(args.data_path, args.dataset)
+if args.dataset == 'cifar10':
     num_classes = 10
-elif(args.dataset == 'cifar100'):
-    print("| Preparing CIFAR-100 dataset...")
-    sys.stdout.write("| ")
-    trainset_full = torchvision.datasets.CIFAR100(root=data_path, train=True, 
-                                                download=True, 
-                                                transform=None)
-    testset = torchvision.datasets.CIFAR100(root=data_path, train=False, 
-                                                download=False, 
-                                                transform=None)
+    full_trainset = datasets.CIFAR10(root=dataset_path, train=True, download=True)
+    testset = datasets.CIFAR10(root=dataset_path, train=False, download=True)
+elif args.dataset == 'cifar100':
     num_classes = 100
-
-elif(args.dataset == 'svhn'):
-    print("| Preparing SVHN dataset...")
-    sys.stdout.write("| ")
-    trainset_full = torchvision.datasets.SVHN(root=data_path, 
-                                            split='train', 
-                                            download=True, 
-                                            transform=None)
-    testset = torchvision.datasets.SVHN(root=data_path, 
-                                            split='test', 
-                                            download=True, 
-                                            transform=None)
+    full_trainset = datasets.CIFAR100(root=dataset_path, train=True, download=True)
+    testset = datasets.CIFAR100(root=dataset_path, train=False, download=True)
+elif args.dataset == 'svhn':
     num_classes = 10
-    
-elif(args.dataset == 'tiny-imagenet-200'): 
-    print("| Preparing tiny-imagenet-200 dataset...")
-    trainset_full = datasets.ImageFolder(os.path.join(data_path, 'train'), None)
-    testset = datasets.ImageFolder(os.path.join(data_path, 'val'), None)
+    full_trainset = datasets.SVHN(root=dataset_path, split='train', download=True)
+    testset = datasets.SVHN(root=dataset_path, split='test', download=True)
+elif args.dataset == 'tiny-imagenet-200':
     num_classes = 200
+    full_trainset = datasets.ImageFolder(root=join(dataset_path, 'train'))
+    testset = datasets.ImageFolder(root=join(dataset_path, 'val'))
 else:
-    raise NotImplementedError
+    raise ValueError('Dataset not found')
 
-# 전체 데이터셋 인덱스를 usage 비율에 따라 stratify하게 분할
-if args.usage != 1.0:
-    usage_idx, _ = train_test_split(
-        range(len(trainset_full)),
-        test_size=1.0 - args.usage,
-        stratify=trainset_full.targets
-    )
+# split stratified trainset based on usage ratio
+print(f"| Splitting trainset with usage ratio {args.usage}")
+if args.usage < 1.0:
+    train_idx, _ = train_test_split(list(range(len(full_trainset))), train_size=args.usage, stratify=full_trainset.targets)
 else:
-    usage_idx = range(len(trainset_full))
+    train_idx = list(range(len(full_trainset)))
 
-# usage_idx로부터 다시 8:2 비율(train:valid)로 stratify 분할
-train_idx, valid_idx = train_test_split(
-    usage_idx,
-    test_size=0.2,
-    stratify=[trainset_full.targets[i] for i in usage_idx]
-)
+# split trainset into trainset and validset with 80:20 ratio
+train_idx, valid_idx = train_test_split(train_idx, train_size=0.8, stratify=[full_trainset.targets[i] for i in train_idx])
 
-print('| Usage ratio:', args.usage)
-print('| Train idx :', train_idx[0], ', valid idx :', valid_idx[0])
+# check first idx of trainset and validset
+print(f"| trainset idx: {train_idx[:5]}")
+print(f"| validset idx: {valid_idx[:5]}")
 
-# 트레이닝 세트의 평균과 표준편차 계산
-trainset_data = []
+# calculate mean and std of trainset for normalization
+train_images = []
 if args.dataset == 'tiny-imagenet-200':
     for idx in train_idx:
-        trainset_data.append(np.array(trainset_full[idx][0]))  # 이미지를 numpy array로 변환
+        train_images.append(np.array(full_trainset[idx][0]))
 else:
     for idx in train_idx:
-        trainset_data.append(trainset_full.data[idx])
-trainset_data = (np.stack(trainset_data) / 255.0).reshape(-1,3)
-train_mean = np.mean(trainset_data, axis=0)
-train_std = np.std(trainset_data, axis=0)
+        train_images.append(full_trainset.data[idx])
+train_images = (np.stack(train_images) / 255.0).reshape(-1,3)
+train_mean = np.mean(train_images, axis=0)
+train_std = np.std(train_images, axis=0)
 print('| Train mean : ', train_mean, ', std : ', train_std)
 
 # set transform
@@ -160,143 +120,105 @@ transform_test = transforms.Compose([
     transforms.Normalize(train_mean, train_std),
 ])
 
-# transform 적용
-trainset = CustomDataset(trainset_full, train_idx, transform_train)
-validset = CustomDataset(trainset_full, valid_idx, transform_test)
+# set dataset
+trainset = CustomDataset(full_trainset, train_idx, transform=transform_train)
+validset = CustomDataset(full_trainset, valid_idx, transform=transform_test)
 testset.transform = transform_test
 
-trainloader = torch.utils.data.DataLoader(trainset, 
-                                            batch_size=args.batch_size, 
-                                            shuffle=True, 
-                                            num_workers=6)
-validloader = torch.utils.data.DataLoader(validset,
-                                            batch_size=cf.eval_batchsize[args.dataset],
-                                            shuffle=False,
-                                            num_workers=4)
-testloader = torch.utils.data.DataLoader(testset, 
-                                            batch_size=cf.eval_batchsize[args.dataset], 
-                                            shuffle=False, 
-                                            num_workers=4)
+# set dataloader
+trainloader = torch.utils.data.DataLoader(trainset, batch_size=cf.train_batchsize[args.dataset], shuffle=True, num_workers=4)
+validloader = torch.utils.data.DataLoader(validset, batch_size=cf.eval_batchsize[args.dataset], shuffle=False, num_workers=4)
+testloader = torch.utils.data.DataLoader(testset, batch_size=cf.eval_batchsize[args.dataset], shuffle=False, num_workers=4)
 
-# 첫 번째 데이터 추출
+# extract first train and valid data
 first_train_data = next(iter(trainloader))
 first_valid_data = next(iter(validloader))
 print("| First train label :", first_train_data[1][0].item(), ', valid label : ', first_valid_data[1][0].item())
 
 # Model
 print('\n[Phase 2] : Model setup')
-print('| Building net type [' + args.net_type + ']...')
-net, file_name = getNetwork(args, num_classes)
+print(f"| Building {args.model} {args.depth}")
+model = getNetwork(args, num_classes)
+model = model.cuda()
+print(model)
 
-use_cuda = torch.cuda.is_available()
-if use_cuda:
-    net.cuda()
-    
+# Loss Function
 criterion = nn.CrossEntropyLoss()
-# print(net)
 
+# Optimizer
 if args.optim_type == 'SGD':
-    optimizer = optim.SGD(net.parameters(), 
-                    lr=args.lr,  
-                    momentum=0.9, 
-                    weight_decay=args.weight_decay)
+    optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
 elif args.optim_type == 'SGDSNR':
-    optimizer = SGDSNR(net.parameters(), 
-                    lr=args.lr,
-                    momentum=0.9, 
-                    weight_decay=args.weight_decay, 
-                    spectrum_regularization=args.sg,
-                    spectrum_variance_regularization=args.svg)
-elif args.optim_type == 'Adam':
-    optimizer = optim.Adam(net.parameters(), 
-                        lr=args.lr,  
-                        weight_decay=args.weight_decay) 
+    optimizer = SGDSNR(model.parameters(), lr=args.lr, weight_decay=args.weight_decay, snr=args.snr, snvr=args.snvr)
 else:
-    raise NotImplementedError
-    
-# set a basic global learning rate scheduler
+    raise ValueError('Optimizer not found')
+
+# Learning Rate Scheduler
 if args.lr_sche == 'cosine':
-    lr_schedule = cf.cosine_decay
-else:
-    raise NotImplementedError
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.num_epochs)
 
-test_acc, test_loss = test(epoch=0, net=net, testloader=testloader, criterion=criterion)
-print(f"| Init model\tTest Loss: {test_loss:.4f} Acc@1: {test_acc:5.2f}%")
+# Training
+print('\n[Phase 3] : Training')
+print("| Training Epochs = ", args.num_epochs)
+print("| Initial Learning Rate = ", args.lr)
+print("| Optimizer = ", args.optim_type)
+print("| Scheduler = ", args.lr_sche)
 
-print('\n[Phase 3] : Training model')
-print('| Training Epochs = ' + str(args.num_epochs))
-print('| Initial Learning Rate = ' + str(args.lr))
-print('| Optimizer = ' + str(args.optim_type) + '\n')
+# save training stats
+training_stats = dict(
+    epoch=0,
+    train_acc=[],
+    train_loss=[],
+    valid_acc=[],
+    valid_loss=[],
+    test_acc=[],
+    test_loss=[],
+    train_time=[],
+    train_idx=train_idx,
+    valid_idx=valid_idx
+)
+best_valid_acc = 0.0
 
-best_acc = 0
-start_epoch = cf.start_epoch
-elapsed_time = 0
-training_stats = {
-    'train_loss': [],
-    'train_acc': [],
-    'valid_loss': [],
-    'valid_acc': [],
-    'test_loss': [],
-    'test_acc': [],
-    'current_lr':[],
-    'schedule_next_lr':[],
-    'epoch_time':[],
-    'elapsed_time':[],
-    'train_idx':train_idx,
-    'valid_idx':valid_idx,
-}
+# epoch loop
+for epoch in range(args.num_epochs):
+    train_acc, train_loss, train_time = train(model, trainloader, criterion, optimizer)
+    valid_acc, valid_loss = test(model, validloader, criterion)
+    test_acc, test_loss = test(model, testloader, criterion)
 
-untuned_lr = args.lr
-for epoch in range(start_epoch, start_epoch+args.num_epochs):
-    epoch_start_time = time.time()
 
-    # this is current LR
-    current_lr = untuned_lr
-    train_acc, train_loss = \
-                train(epoch, net, args.num_epochs, trainloader, criterion, optimizer)
-    valid_acc, valid_loss = \
-                test(epoch, net, validloader, criterion)
-    test_acc, test_loss = \
-                test(epoch, net, testloader, criterion)
-    print(f"| Epoch #{epoch}\tTrain Loss: {train_loss:.4f} Acc@1: {train_acc:5.2f}% | Valid Loss: {valid_loss:.4f} Acc@1: {valid_acc:5.2f}% | Test Loss: {test_loss:.4f} Acc@1: {test_acc:5.2f}%")
-    
-    # save best
-    if valid_acc > best_acc:
-        print('| Saving Best ...')
-        state = {
-            'net': net.state_dict(),
-            'train_loss':train_loss,
-            'train_acc':train_acc,
-            'valid_loss':valid_loss,
-            'valid_acc':valid_acc,
-            'test_loss':test_loss,
-            'test_acc':test_acc,
-            'epoch':epoch
-        }
-        best_acc = valid_acc
-        torch.save(state, join(args.ckpt_path, f'epoch_best.ckpt'))
-    
-    untuned_lr = \
-        lr_schedule(args.lr, epoch, args.num_epochs)
-    
-    # scheduling by default
-    for param_group in optimizer.param_groups:
-        param_group['lr'] = untuned_lr
-            
-    epoch_time = time.time() - epoch_start_time
-    elapsed_time += epoch_time
-    
-    training_stats['train_loss'].append(train_loss)
+    if valid_acc > best_valid_acc:
+        is_best = True
+        best_valid_acc = valid_acc
+        best_epoch = dict(
+            epoch=epoch+1,
+            model=model.state_dict(),
+            train_acc=train_acc,
+            train_loss=train_loss,
+            valid_acc=valid_acc,
+            valid_loss=valid_loss,
+            test_acc=test_acc,
+            test_loss=test_loss,
+        )
+    else:
+        is_best = False
+
+    # save training stats
+    training_stats['epoch'] = epoch + 1
     training_stats['train_acc'].append(train_acc)
-    training_stats['valid_loss'].append(valid_loss)
+    training_stats['train_loss'].append(train_loss)
     training_stats['valid_acc'].append(valid_acc)
-    training_stats['test_loss'].append(test_loss)
+    training_stats['valid_loss'].append(valid_loss)
     training_stats['test_acc'].append(test_acc)
-    training_stats['current_lr'].append(current_lr)
-    training_stats['schedule_next_lr'].append(untuned_lr)
-    training_stats['epoch_time'].append(epoch_time)
-    training_stats['elapsed_time'].append(elapsed_time)
-    print()
-    
-np.save(join(args.ckpt_path, "training_stats.npy"), training_stats)
-        
+    training_stats['test_loss'].append(test_loss)
+    training_stats['train_time'].append(train_time)
+
+    # print stats
+    print(f"| Epoch {epoch+1}/{args.num_epochs} | Train Acc: {train_acc:.2f} | Train Loss: {train_loss:.4f} | Valid Acc: {valid_acc:.2f} | Valid Loss: {valid_loss:.4f} | Test Acc: {test_acc:.2f} | Test Loss: {test_loss:.4f} {' best' if is_best else ''}\n")
+
+    # update learning rate
+    if args.lr_sche == 'cosine':
+        scheduler.step()
+
+# save training stats
+torch.save(best_epoch, join(args.ckpt_path, "best_epoch.pth"))
+torch.save(training_stats, join(args.ckpt_path, "training_stats.pth"))

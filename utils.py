@@ -1,4 +1,5 @@
 import os
+import random
 import torch
 from networks import *
 from operator import itemgetter
@@ -8,74 +9,66 @@ import tqdm
 import time
 import pandas as pd
 import json
-
+import logging
 from torch.utils.data import Dataset
 
-def save_args_to_file(args, output_file_path):
-    with open(output_file_path, "w") as output_file:
-        json.dump(vars(args), output_file, indent=4)
+def set_seed(seed=42):
+    logging.basicConfig(level=logging.INFO)
+    logging.info(f"=====> Set the random seed as {seed}")
+    np.random.seed(seed)
+    random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    # When running on the CuDNN backend, two further options must be set
+    torch.backends.cudnn.enabled = True
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    torch.use_deterministic_algorithms(True)
+    # Set a fixed value for the hash seed
+    os.environ["PYTHONHASHSEED"] = str(seed)
 
-
-# Training 
-def train(  epoch, 
-            net, 
-            num_epochs, 
-            trainloader, 
-            criterion, 
-            optimizer, 
-            optim_type='SGD', 
-            tb_update_interval=0, 
-            untuned_lr=0, 
-            args=None):
-    
-    net.train()
-    net.training = True
+def train(model, trainloader, criterion, optimizer):
+    model.train()
     train_loss = 0
     correct = 0
     total = 0 
-    print(f'Training Epoch {epoch}')
-    pbar = tqdm.tqdm(total=len(trainloader), desc="Training", ncols=150)
-
-    for batch_idx, (inputs, targets) in enumerate(trainloader):
-        inputs, targets = inputs.cuda(), targets.cuda() # GPU settings
+    start_time = time.time()
+    pbar = tqdm.tqdm(trainloader, desc="| Training", ncols=150)
+    
+    for inputs, targets in pbar:
+        inputs, targets = inputs.cuda(), targets.cuda()
         optimizer.zero_grad()
-        outputs = net(inputs)               # Forward Propagation
-        loss = criterion(outputs, targets)  # Loss
-        loss.backward()                     # Backward Propagation
-        optimizer.step()                    # Optimizer update
-
+        outputs = model(inputs)
+        loss = criterion(outputs, targets)
+        loss.backward()
+        optimizer.step()
+        
         train_loss += loss.item() * targets.size(0)
         _, predicted = torch.max(outputs.data, 1)
         total += targets.size(0)
         correct += predicted.eq(targets.data).cpu().sum()
-        pbar.update(1)
-        
-        # if tb_update_interval > 0 and args.total_iters % tb_update_interval == 0:
-        #     print(f"--------------------> tb_update_interval: {tb_update_interval}, temp_balance")
-        #     temp_balance(args=args, net=net, optimizer=optimizer, epoch=epoch, untuned_lr=untuned_lr, iters=args.total_iters)
-        
-        # if tb_update_interval > 0:
-        #     args.total_iters += 1
-            
+    
     pbar.close()
+    train_time = time.time() - start_time
     train_loss /= total
-    acc = 100.*correct/total
-    acc = acc.item()
+    train_acc = 100. * correct / total
+    train_acc = train_acc.item()
 
-    return acc, train_loss
+    return train_acc, train_loss, train_time
 
 
 # Testing
-def test(epoch, net, testloader, criterion):
-    net.eval()
-    net.training = False
+def test(model, testloader, criterion):
+    model.eval()
+    model.training = False
     test_loss = 0
     correct = 0
     total = 0
     with torch.no_grad():
         for batch_idx, (inputs, targets) in enumerate(testloader):
             inputs, targets = inputs.cuda(), targets.cuda()
-            outputs = net(inputs)
+            outputs = model(inputs)
             loss = criterion(outputs, targets)
 
             test_loss += loss.item() * targets.size(0)
@@ -89,6 +82,7 @@ def test(epoch, net, testloader, criterion):
         test_loss = test_loss/total
         
     return acc, test_loss
+
 
 class CustomDataset(Dataset):
     def __init__(self, dataset, indices, transform=None):
@@ -106,27 +100,58 @@ class CustomDataset(Dataset):
         return len(self.indices)
     
 
-# Return network & file name
+from torchvision.models import resnet18, resnet34, vgg16, vgg19
+
 def getNetwork(args, num_classes):
-    if args.net_type == 'vgg_cifar':
-        net = VGG_cifar(args.depth,  num_classes, args.widen_factor)
-        file_name = 'vgg_cifar'
-    elif args.net_type == 'resnet':
-        net = ResNet(args.depth,  num_classes, args.widen_factor)
-        file_name = 'resnet'
-    elif args.net_type == 'resnet_tiny_imagenet':
-        net = ResNet_tiny_imagenet(args.depth, num_classes=num_classes)
-        file_name = 'resnet_tiny_imagenet'
-    elif args.net_type == 'wide_resnet':
-        net = Wide_ResNet(depth=args.depth, 
-                            widen_factor=args.widen_factor, 
-                            num_classes=num_classes)
-        file_name = 'wide_resnet'
+    if args.model == 'resnet':
+        if args.depth == 18:
+            model = resnet18(num_classes=num_classes)
+        if args.depth == 34:
+            model = resnet34(num_classes=num_classes)
+
+        # Modify the first convolutional layer to accept smaller images
+        model.conv1 = torch.nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
+        model.maxpool = torch.nn.Identity()  # Remove the maxpool layer
         
-    return net, file_name
+        # Initialize weights
+        def init_weights(m):
+            if isinstance(m, torch.nn.Conv2d) or isinstance(m, torch.nn.Linear):
+                torch.nn.init.kaiming_normal_(m.weight)
+            if isinstance(m, torch.nn.Linear) and m.bias is not None:
+                torch.nn.init.constant_(m.bias, 0)
+        
+        model.apply(init_weights)
 
+    elif 'vgg' in args.model:
+        if args.depth == 16:
+            model = vgg16(num_classes=num_classes)
+        if args.depth == 19:
+            model = vgg19(num_classes=num_classes)
+        
+        # Modify the avgpool layer to accept smaller images
+        model.avgpool = torch.nn.AdaptiveAvgPool2d((1, 1))
 
+        if 'clf' in args.model:
+            linear_dim = int(args.remark)
+            model.classifier = torch.nn.Sequential(
+                torch.nn.Linear(512, linear_dim),
+                torch.nn.ReLU(inplace=True),
+                torch.nn.Dropout(),
+                torch.nn.Linear(linear_dim, linear_dim),
+                torch.nn.ReLU(inplace=True),
+                torch.nn.Dropout(),
+                torch.nn.Linear(linear_dim, num_classes)
+            )
+        else:
+            model.classifier = torch.nn.Linear(512, num_classes)
+        
+        # Initialize weights
+        def init_weights(m):
+            if isinstance(m, torch.nn.Conv2d) or isinstance(m, torch.nn.Linear):
+                torch.nn.init.kaiming_normal_(m.weight)
+            if isinstance(m, torch.nn.Linear) and m.bias is not None:
+                torch.nn.init.constant_(m.bias, 0)
+        
+        model.apply(init_weights)
 
-def save_args_to_file(args, output_file_path):
-    with open(output_file_path, "w") as output_file:
-        json.dump(vars(args), output_file, indent=4)
+    return model

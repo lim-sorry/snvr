@@ -2,55 +2,44 @@ export PYTHONUNBUFFERED=1
 export OMP_NUM_THREADS=1
 export CUBLAS_WORKSPACE_CONFIG=:4096:8
 
-SLURM_ARRAY_TASK_ID=$1
-data_path=$data_path
-src_path=$src_path
-ckpt_src_path=$ckpt_src_path
+experiment_num=$1
+cfg=$(sed -n "$experiment_num"p ${src_path}/bash_scripts/config/test.csv)
 
-cfg=$(sed -n "$SLURM_ARRAY_TASK_ID"p ${src_path}/bash_scripts/config/test.tsv)
+#dataset,usage,model,depth,lr,snr,snvr,seed,accuracy,remark
+dataset=$(echo $cfg | awk -F, '{gsub(/^ *| *$/, "", $1); print $1}')
+usage=$(echo $cfg | awk -F, '{gsub(/^ *| *$/, "", $2); print $2}')
+model=$(echo $cfg | awk -F, '{gsub(/^ *| *$/, "", $3); print $3}')
+depth=$(echo $cfg | awk -F, '{gsub(/^ *| *$/, "", $4); print $4}')
+lr=$(echo $cfg | awk -F, '{gsub(/^ *| *$/, "", $5); print $5}')
+snr=$(echo $cfg | awk -F, '{gsub(/^ *| *$/, "", $6); print $6}')
+snvr=$(echo $cfg | awk -F, '{gsub(/^ *| *$/, "", $7); print $7}')
+seed_lst=$(echo $cfg | awk -F, '{gsub(/^ *| *$/, "", $8); print $8}')
+# accuracy=$(echo $cfg | awk -F, '{gsub(/^ *| *$/, "", $9); print $9}')
+remark=$(echo $cfg | awk -F, '{gsub(/^ *| *$/, "", $10); print $10}')
+remark=${remark:-"None"}
 
-netType=$(echo $cfg | cut -f 1 -d ' ')
-width=$(echo $cfg | cut -f 2 -d ' ')
-depth=$(echo $cfg | cut -f 3 -d ' ')
-dataset=$(echo $cfg | cut -f 4 -d ' ')
-usage=$(echo $cfg | cut -f 5 -d ' ')
-num_epochs=$(echo $cfg | cut -f 6 -d ' ')
-lr_sche=$(echo $cfg | cut -f 7 -d ' ')
-seed_lst=$(echo $cfg | cut -f 8 -d ' ')
-lr=$(echo $cfg | cut -f 9 -d ' ')
-weight_decay=$(echo $cfg | cut -f 10 -d ' ')
-sg=$(echo $cfg | cut -f 11 -d ' ')
-svg=$(echo $cfg | cut -f 12 -d ' ')
-optim_type=$(echo $cfg | cut -f 13 -d ' ')
+# create folder for saving checkpoints
+base_path=${ckpt_src_path}/${dataset}_${usage}/${model}_${depth}/${lr}_${snr}_${snvr}
+mkdir -p ${base_path}
 
-
-# saving folders of trained models 
-base_path=${ckpt_src_path}/${dataset}/usage${usage}/${netType}_${depth}_${width}
-base_path=${base_path}/${optim_type}_init${lr}_${lr_sche}
-base_path=${base_path}/snr_sg${sg}_snvr_svg${svg}
-
-array=$(echo $seed_lst | tr ',' ' ')
-# run five random seeds 
-for seed in $array
+# run experiments with different seeds
+seeds=$(echo $seed_lst | tr ";" "\n")
+for seed in $seeds
     do 
-        echo run experiment with seed $seed
-        ckpt_folder=epochs${num_epochs}_wd${weight_decay}_seed${seed}
-        mkdir -p ${base_path}/${ckpt_folder}
+        echo "Running experiment with seed ${seed}"
+        ckpt_path=${base_path}/${seed}
+        mkdir -p ${ckpt_path}
 
         python main.py \
-            --lr ${lr} \
-            --net-type ${netType} \
-            --depth ${depth} \
-            --widen-factor ${width} \
-            --num-epochs ${num_epochs} \
-            --seed ${seed} \
             --dataset ${dataset} \
             --usage ${usage} \
-            --optim-type ${optim_type} \
-            --lr-sche ${lr_sche} \
-            --weight-decay ${weight_decay} \
-            --sg ${sg} \
-            --svg ${svg} \
-            --ckpt-path ${base_path}/${ckpt_folder} \
-            --datadir ${data_path}
+            --model ${model} \
+            --depth ${depth} \
+            --lr ${lr} \
+            --snr ${snr} \
+            --snvr ${snvr} \
+            --seed ${seed} \
+            --remark ${remark} \
+            --ckpt_path ${ckpt_path} \
+            --data_path ${data_path}
     done
