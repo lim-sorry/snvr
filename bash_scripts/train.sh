@@ -25,6 +25,7 @@ mkdir -p ${base_path}
 # run experiments with different seeds
 seeds=$(echo $seed_lst | tr ";" "\n")
 for seed in $seeds
+# for seed in 43
     do 
         echo "Running experiment with seed ${seed}"
         ckpt_path=${base_path}/${seed}

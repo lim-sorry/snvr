@@ -29,15 +29,17 @@ parser.add_argument('--seed', default=42, type=int, help='Random seed')
 
 parser.add_argument('--ckpt_path', default='ckpt/test', help='Checkpoint path')
 parser.add_argument('--data_path', default='data', help='Data path')
-parser.add_argument('--remark', default='', help='Remark for the experiment')
+parser.add_argument('--remark', default='{}', type=str, help='Remark')
 
 # default arguments
 parser.add_argument('--num_epochs', default=200, type=int, help='Number of epochs')
 parser.add_argument('--optim_type', default='SGDSNR', help='SGD | SGDSNR | Adam')
+parser.add_argument('--momentum', default=0.9, type=float, help='Momentum')
 parser.add_argument('--weight_decay', default=0.0005, type=float, help='Weight Decay')
 parser.add_argument('--lr_sche', default='cosine', help='cosine')
 
 args = parser.parse_args()
+args.remark = json.loads(args.remark.replace(";", ",").replace("'", "\""))
 print(args)
 
 # check if already trained in training_stats.pth
@@ -147,9 +149,9 @@ criterion = nn.CrossEntropyLoss()
 
 # Optimizer
 if args.optim_type == 'SGD':
-    optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+    optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
 elif args.optim_type == 'SGDSNR':
-    optimizer = SGDSNR(model.parameters(), lr=args.lr, weight_decay=args.weight_decay, snr=args.snr, snvr=args.snvr)
+    optimizer = SGDSNR(model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay, snr=args.snr, snvr=args.snvr)
 else:
     raise ValueError('Optimizer not found')
 

@@ -63,7 +63,7 @@ class SGDSNR(Optimizer):
             group.setdefault('spectrum_regularization', 0)
             group.setdefault('spectrum_variance_regularization', 0)
             group.setdefault('differentiable', False)
-            group.setdefault('dampening', 0)            
+            group.setdefault('dampening', 0)
 
     @torch.no_grad()
     def step(self, closure=None):

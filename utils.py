@@ -13,8 +13,7 @@ import logging
 from torch.utils.data import Dataset
 
 def set_seed(seed=42):
-    logging.basicConfig(level=logging.INFO)
-    logging.info(f"=====> Set the random seed as {seed}")
+    print(f"=====> Set the random seed as {seed}")
     np.random.seed(seed)
     random.seed(seed)
     torch.manual_seed(seed)
@@ -100,7 +99,7 @@ class CustomDataset(Dataset):
         return len(self.indices)
     
 
-from torchvision.models import resnet18, resnet34, vgg16, vgg19
+from torchvision.models import resnet18, resnet34, vgg16_bn, vgg19_bn
 
 def getNetwork(args, num_classes):
     if args.model == 'resnet':
@@ -124,15 +123,15 @@ def getNetwork(args, num_classes):
 
     elif 'vgg' in args.model:
         if args.depth == 16:
-            model = vgg16(num_classes=num_classes)
+            model = vgg16_bn(num_classes=num_classes)
         if args.depth == 19:
-            model = vgg19(num_classes=num_classes)
+            model = vgg19_bn(num_classes=num_classes)
         
         # Modify the avgpool layer to accept smaller images
         model.avgpool = torch.nn.AdaptiveAvgPool2d((1, 1))
 
-        if 'clf' in args.model:
-            linear_dim = int(args.remark)
+        if 'clf' in args.model:            
+            linear_dim = args.remark['linear_dim']
             model.classifier = torch.nn.Sequential(
                 torch.nn.Linear(512, linear_dim),
                 torch.nn.ReLU(inplace=True),
@@ -153,5 +152,9 @@ def getNetwork(args, num_classes):
                 torch.nn.init.constant_(m.bias, 0)
         
         model.apply(init_weights)
+
+    if args.model == 'convnext':
+        from torchvision.models import convnext_tiny
+        model = convnext_tiny(num_classes=num_classes)
 
     return model
