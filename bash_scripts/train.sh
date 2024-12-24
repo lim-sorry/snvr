@@ -16,7 +16,6 @@ snvr=$(echo $cfg | awk -F, '{gsub(/^ *| *$/, "", $7); print $7}')
 seed_lst=$(echo $cfg | awk -F, '{gsub(/^ *| *$/, "", $8); print $8}')
 # accuracy=$(echo $cfg | awk -F, '{gsub(/^ *| *$/, "", $9); print $9}')
 remark=$(echo $cfg | awk -F, '{gsub(/^ *| *$/, "", $10); print $10}')
-remark=${remark:-"None"}
 
 # create folder for saving checkpoints
 base_path=${ckpt_src_path}/${dataset}_${usage}/${model}_${depth}/${lr}_${snr}_${snvr}

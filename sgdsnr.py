@@ -40,7 +40,9 @@ class SGDSNR(Optimizer):
                     weight_decay=0, nesterov=False, 
                     snr=0, 
                     snvr=0,
-                    differentiable: bool = False):
+                    differentiable: bool = False,
+                    remark=None
+                    ):
         if lr is not required and lr < 0.0:
             raise ValueError("Invalid learning rate: {}".format(lr))
         if momentum < 0.0:
@@ -51,7 +53,8 @@ class SGDSNR(Optimizer):
         defaults = dict(lr=lr, momentum=momentum, dampening=dampening,
                         weight_decay=weight_decay, nesterov=nesterov, 
                         spectrum_regularization=snr,
-                        spectrum_variance_regularization=snvr)
+                        spectrum_variance_regularization=snvr,
+                        remark=remark)
         if nesterov and (momentum <= 0 or dampening != 0):
             raise ValueError("Nesterov momentum requires a momentum and zero dampening")
         super(SGDSNR, self).__init__(params, defaults)
@@ -62,8 +65,6 @@ class SGDSNR(Optimizer):
             group.setdefault('nesterov', False)
             group.setdefault('spectrum_regularization', 0)
             group.setdefault('spectrum_variance_regularization', 0)
-            group.setdefault('differentiable', False)
-            group.setdefault('dampening', 0)
 
     @torch.no_grad()
     def step(self, closure=None):

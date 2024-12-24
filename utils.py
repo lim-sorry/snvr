@@ -112,14 +112,7 @@ def getNetwork(args, num_classes):
         model.conv1 = torch.nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
         model.maxpool = torch.nn.Identity()  # Remove the maxpool layer
         
-        # Initialize weights
-        def init_weights(m):
-            if isinstance(m, torch.nn.Conv2d) or isinstance(m, torch.nn.Linear):
-                torch.nn.init.kaiming_normal_(m.weight)
-            if isinstance(m, torch.nn.Linear) and m.bias is not None:
-                torch.nn.init.constant_(m.bias, 0)
-        
-        model.apply(init_weights)
+        raise ValueError('Initialization Not implemented yet')
 
     elif 'vgg' in args.model:
         if args.depth == 16:
@@ -144,14 +137,18 @@ def getNetwork(args, num_classes):
         else:
             model.classifier = torch.nn.Linear(512, num_classes)
         
-        # Initialize weights
-        def init_weights(m):
-            if isinstance(m, torch.nn.Conv2d) or isinstance(m, torch.nn.Linear):
-                torch.nn.init.kaiming_normal_(m.weight)
-            if isinstance(m, torch.nn.Linear) and m.bias is not None:
-                torch.nn.init.constant_(m.bias, 0)
-        
-        model.apply(init_weights)
+        for m in model.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode="fan_out", nonlinearity="relu")
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.BatchNorm2d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.Linear):
+                nn.init.normal_(m.weight, 0, 0.01)
+                nn.init.constant_(m.bias, 0)
+    
 
     if args.model == 'convnext':
         from torchvision.models import convnext_tiny

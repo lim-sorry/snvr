@@ -39,7 +39,7 @@ parser.add_argument('--weight_decay', default=0.0005, type=float, help='Weight D
 parser.add_argument('--lr_sche', default='cosine', help='cosine')
 
 args = parser.parse_args()
-args.remark = json.loads(args.remark.replace(";", ",").replace("'", "\""))
+args.remark = json.loads(args.remark.replace(";", ",").replace("'", "\"")) if args.remark != '{}' else {}
 print(args)
 
 # check if already trained in training_stats.pth
@@ -151,7 +151,7 @@ criterion = nn.CrossEntropyLoss()
 if args.optim_type == 'SGD':
     optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
 elif args.optim_type == 'SGDSNR':
-    optimizer = SGDSNR(model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay, snr=args.snr, snvr=args.snvr)
+    optimizer = SGDSNR(model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay, snr=args.snr, snvr=args.snvr, remark=args.remark)
 else:
     raise ValueError('Optimizer not found')
 
