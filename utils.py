@@ -1,6 +1,7 @@
 import os
 import random
 import torch
+import torch.nn as nn
 from networks import *
 from operator import itemgetter
 import numpy as np
@@ -103,40 +104,72 @@ from torchvision.models import resnet18, resnet34, vgg16_bn, vgg19_bn
 
 def getNetwork(args, num_classes):
     if args.model == 'resnet':
-        if args.depth == 18:
+        if args.depth == '18':
             model = resnet18(num_classes=num_classes)
-        if args.depth == 34:
+        if args.depth == '34':
             model = resnet34(num_classes=num_classes)
 
         # Modify the first convolutional layer to accept smaller images
-        model.conv1 = torch.nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
-        model.maxpool = torch.nn.Identity()  # Remove the maxpool layer
-        
-        raise ValueError('Initialization Not implemented yet')
+        model.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
+        model.maxpool = nn.Identity()  # Remove the maxpool layer
 
     elif 'vgg' in args.model:
-        if args.depth == 16:
+        if args.depth == '16':
             model = vgg16_bn(num_classes=num_classes)
-        if args.depth == 19:
+        if args.depth == '19':
             model = vgg19_bn(num_classes=num_classes)
         
         # Modify the avgpool layer to accept smaller images
-        model.avgpool = torch.nn.AdaptiveAvgPool2d((1, 1))
+        model.avgpool = nn.AdaptiveAvgPool2d((1, 1))
 
         if 'clf' in args.model:            
             linear_dim = args.remark['linear_dim']
-            model.classifier = torch.nn.Sequential(
-                torch.nn.Linear(512, linear_dim),
-                torch.nn.ReLU(inplace=True),
-                torch.nn.Dropout(),
-                torch.nn.Linear(linear_dim, linear_dim),
-                torch.nn.ReLU(inplace=True),
-                torch.nn.Dropout(),
-                torch.nn.Linear(linear_dim, num_classes)
+            model.classifier = nn.Sequential(
+                nn.Linear(512, linear_dim),
+                nn.ReLU(inplace=True),
+                nn.Dropout(),
+                nn.Linear(linear_dim, linear_dim),
+                nn.ReLU(inplace=True),
+                nn.Dropout(),
+                nn.Linear(linear_dim, num_classes)
             )
         else:
-            model.classifier = torch.nn.Linear(512, num_classes)
+            model.classifier = nn.Linear(512, num_classes)
         
+        # if 'skip' in args.model, add skip connections from 
+        # the output of the first input conv layer (with bn, relu) 
+        # and the output of the last conv layer 
+        # right before the classifier
+        if 'skip' in args.model:
+            class VGGWithSkipConnections(nn.Module):
+                def __init__(self, model):
+                    super(VGGWithSkipConnections, self).__init__()
+                    self.input = model.features[:3]
+                    self.features = model.features[3:]
+                    self.features[-2] = nn.Identity()
+                    self.skip = nn.Sequential(
+                        nn.Conv2d(64, 512, kernel_size=1, stride=1, padding=0),
+                        nn.BatchNorm2d(512)
+                    )
+                    self.avgpool = model.avgpool
+                    self.relu = nn.ReLU(inplace=True)
+                    self.classifier = model.classifier
+
+                def forward(self, x):
+                    x = self.input(x)
+                    skip = self.skip(x)
+                    skip = self.avgpool(skip)
+
+                    x = self.features(x)
+                    x = self.avgpool(x)
+                    x = self.relu(x + skip)
+
+                    x = torch.flatten(x, 1)
+                    x = self.classifier(x)
+                    return x
+
+            model = VGGWithSkipConnections(model)
+
         for m in model.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(m.weight, mode="fan_out", nonlinearity="relu")
@@ -148,10 +181,57 @@ def getNetwork(args, num_classes):
             elif isinstance(m, nn.Linear):
                 nn.init.normal_(m.weight, 0, 0.01)
                 nn.init.constant_(m.bias, 0)
-    
+        
 
     if args.model == 'convnext':
-        from torchvision.models import convnext_tiny
-        model = convnext_tiny(num_classes=num_classes)
+        from torchvision.models.convnext import CNBlockConfig, _convnext
+
+        if args.depth == 'tiny':
+            scale_factor = 0.5
+
+            # block_setting 수정
+            block_setting = [
+                CNBlockConfig(int(96 * scale_factor), int(192 * scale_factor), 3),
+                CNBlockConfig(int(192 * scale_factor), int(384 * scale_factor), 3),
+                CNBlockConfig(int(384 * scale_factor), int(768 * scale_factor), 9),
+                CNBlockConfig(int(768 * scale_factor), None, 3),
+            ]
+
+            stochastic_depth_prob = 0.1
+            weights = None  # Pretrained weights를 사용하지 않음
+
+            # 모델 생성
+            model = _convnext(block_setting, stochastic_depth_prob, weights, progress=True, num_classes=num_classes)
+
+            # features[0][0]의 Conv2d layer 수정
+            if isinstance(model.features[0][0], nn.Conv2d):
+                in_channels = 3
+                out_channels = int(96 * scale_factor)
+                model.features[0][0] = nn.Conv2d(
+                    in_channels, 
+                    out_channels, 
+                    kernel_size=1, 
+                    stride=1, 
+                    padding=0, 
+                    bias=False
+                )
+
+        for m in model.modules():
+            if isinstance(m, (nn.Conv2d, nn.Linear)):
+                nn.init.trunc_normal_(m.weight, std=0.02)
+                if m.bias is not None:
+                    nn.init.zeros_(m.bias)
 
     return model
+
+
+if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--model', type=str, default='convnext', help='Model name')
+    parser.add_argument('--depth', type=str, default='tiny', help='Model depth')
+    parser.add_argument('--remark', type=dict, default={}, help='Remark')
+    args = parser.parse_args()
+    
+    model = getNetwork(args, 100)
+    print(model)

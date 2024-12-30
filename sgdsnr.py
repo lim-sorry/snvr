@@ -41,7 +41,7 @@ class SGDSNR(Optimizer):
                     snr=0, 
                     snvr=0,
                     differentiable: bool = False,
-                    remark=None
+                    remark={}
                     ):
         if lr is not required and lr < 0.0:
             raise ValueError("Invalid learning rate: {}".format(lr))
@@ -51,20 +51,22 @@ class SGDSNR(Optimizer):
             raise ValueError("Invalid weight_decay value: {}".format(weight_decay))
 
         defaults = dict(lr=lr, momentum=momentum, dampening=dampening,
-                        weight_decay=weight_decay, nesterov=nesterov, 
-                        spectrum_regularization=snr,
-                        spectrum_variance_regularization=snvr,
-                        remark=remark)
+                        weight_decay=weight_decay, nesterov=nesterov)
         if nesterov and (momentum <= 0 or dampening != 0):
             raise ValueError("Nesterov momentum requires a momentum and zero dampening")
+        
+        self.snr = snr
+        self.snvr = snvr
+        if 'exclude_layer' in remark.keys():
+            self.exclude_layer = remark['exclude_layer']
+        else:
+            self.exclude_layer = []
         super(SGDSNR, self).__init__(params, defaults)
 
     def __setstate__(self, state):
         super(SGDSNR, self).__setstate__(state)
         for group in self.param_groups:
             group.setdefault('nesterov', False)
-            group.setdefault('spectrum_regularization', 0)
-            group.setdefault('spectrum_variance_regularization', 0)
 
     @torch.no_grad()
     def step(self, closure=None):
@@ -79,56 +81,48 @@ class SGDSNR(Optimizer):
             with torch.enable_grad():
                 loss = closure()
 
+        layer_idx = 0
+        if self.snr != 0:
+            sn_dict, uv_dict = {}, {}
+            for group in self.param_groups:
+                for p in group['params']:
+                    if p.grad is None:
+                        continue
+                    if p.dim() > 1:
+                        sn_dict[layer_idx], uv_dict[layer_idx] = compute_weight(p.to(device))
+                        layer_idx += 1
+                    else:
+                        pass
+            if self.snvr != 0:
+                filter_sn_list = [sn_dict[i] for i in sn_dict.keys() if i not in self.exclude_layer]
+                n_layers = len(filter_sn_list)
+                sn_mean = sum(sn[0] for sn in filter_sn_list) / n_layers
+                len_coeff = (n_layers - 1) / n_layers
+
+        layer_idx = 0
         for group in self.param_groups:
             weight_decay = group['weight_decay']
             momentum = group['momentum']
             dampening = group['dampening']
             nesterov = group['nesterov']
-            spectrum_regularization = group['spectrum_regularization']
-            spectrum_variance_regularization = group['spectrum_variance_regularization']
 
-            if spectrum_regularization != 0:
-                sn_dict, uv_dict = {}, {}
-                for i, p in enumerate(group['params']):
-                    if p.grad is None:
-                        continue
-                    if p.dim() > 1:
-                        sn_dict[i], uv_dict[i] = compute_weight(p.to(device))
-                    else:
-                        pass
-                if spectrum_variance_regularization != 0:
-                    n_layers = len(sn_dict.keys())
-                    sn_mean = sum(sn[0] for sn in sn_dict.values()) / n_layers
-                    len_coeff = (n_layers - 1) / n_layers            
-
-            for i, p in enumerate(group['params']):
+            for p in group['params']:
                 if p.grad is None:
                     continue
                 d_p = p.grad
                 if weight_decay != 0:
                     d_p = d_p.add(p, alpha=weight_decay)
 
-                if spectrum_regularization != 0:
-                    #print("spectrum_regularization", spectrum_regularization, p.dim())
-                    if p.dim() > 1:
-                        sn, uv = sn_dict[i], uv_dict[i]
+                if p.dim() > 1:
+                    if self.snr != 0:
+                        sn, uv = sn_dict[layer_idx], uv_dict[layer_idx]
                         d_p = d_p.add(torch.reshape(torch.mul(sn, uv), p.shape),
-                                        alpha=spectrum_regularization)
-                    else:
-                        pass
-                else:
-                    pass
-
-                if spectrum_variance_regularization != 0:
-                    # print("spectrum_var_regularization", spectrum_var_regularization, p.dim(), p.shape)
-                    if p.dim() > 1:
-                        sn, uv = sn_dict[i], uv_dict[i]
-                        d_p = d_p.add(torch.reshape(torch.mul(torch.mul(sn - sn_mean, len_coeff), uv), p.shape),
-                                        alpha=spectrum_variance_regularization)
-                    else:
-                        pass
-                else:
-                    pass
+                                        alpha=self.snr)
+                        if self.snvr != 0:
+                            if layer_idx not in self.exclude_layer:    
+                                d_p = d_p.add(torch.reshape(torch.mul(torch.mul(sn - sn_mean, len_coeff), uv), p.shape),
+                                                alpha=self.snvr)
+                    layer_idx += 1
 
                 if momentum != 0:
                     param_state = self.state[p]

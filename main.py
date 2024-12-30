@@ -21,7 +21,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--dataset', default='tiny-imagenet-200', help='cifar10 | cifar100 | svhn | tiny-imagenet-200')
 parser.add_argument('--usage', default=0.5, type=float, help='Usage ratio of the training set')
 parser.add_argument('--model', default='resnet', help='resnet')
-parser.add_argument('--depth', default=18, type=int, help='depth of the network')
+parser.add_argument('--depth', default='18', type=str, help='depth of the network')
 parser.add_argument('--lr', default=0.1, type=float, help='learning rate')
 parser.add_argument('--snr', default=0.0, type=float, help='spectrum regularization')
 parser.add_argument('--snvr', default=0.0, type=float, help='spectrum variance regularization')
@@ -154,6 +154,13 @@ elif args.optim_type == 'SGDSNR':
     optimizer = SGDSNR(model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay, snr=args.snr, snvr=args.snvr, remark=args.remark)
 else:
     raise ValueError('Optimizer not found')
+
+layer_idx = 0
+for group in optimizer.param_groups:
+    for p in group['params']:
+        if p.dim() > 1:
+            print(layer_idx, p.shape)
+            layer_idx += 1
 
 # Learning Rate Scheduler
 if args.lr_sche == 'cosine':
