@@ -109,16 +109,19 @@ def getNetwork(args, num_classes):
         if args.depth == '34':
             model = resnet34(num_classes=num_classes)
 
-        # Modify the first convolutional layer to accept smaller images
-        model.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
-        model.maxpool = nn.Identity()  # Remove the maxpool layer
+        if args.dataset == 'imagenet100':
+            pass
+        else:
+            # Modify the first convolutional layer to accept smaller images
+            model.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
+            model.maxpool = nn.Identity()  # Remove the maxpool layer
 
     elif 'vgg' in args.model:
         if args.depth == '16':
             model = vgg16_bn(num_classes=num_classes)
         if args.depth == '19':
             model = vgg19_bn(num_classes=num_classes)
-        
+
         # Modify the avgpool layer to accept smaller images
         model.avgpool = nn.AdaptiveAvgPool2d((1, 1))
 
@@ -183,11 +186,11 @@ def getNetwork(args, num_classes):
                 nn.init.constant_(m.bias, 0)
         
 
-    if args.model == 'convnext':
+    if 'convnext' in args.model:
         from torchvision.models.convnext import CNBlockConfig, _convnext
 
         if args.depth == 'tiny':
-            scale_factor = 0.5
+            scale_factor = 1.0
 
             # block_setting 수정
             block_setting = [
@@ -202,6 +205,7 @@ def getNetwork(args, num_classes):
 
             # 모델 생성
             model = _convnext(block_setting, stochastic_depth_prob, weights, progress=True, num_classes=num_classes)
+            print(model)
 
             # features[0][0]의 Conv2d layer 수정
             if isinstance(model.features[0][0], nn.Conv2d):
@@ -222,14 +226,77 @@ def getNetwork(args, num_classes):
                 if m.bias is not None:
                     nn.init.zeros_(m.bias)
 
+    if 'resnext' in args.model:
+        from torchvision.models import resnext50_32x4d
+        from torchvision.models.resnet import Bottleneck, _resnet
+
+        if args.depth == '50':
+            scale_factor = float(args.remark['scale_factor']) if 'scale_factor' in args.remark else 1.0
+            model = _resnet(Bottleneck, [3, 4, 6, 3], None, True, groups=32, width_per_group=int(4 * scale_factor), num_classes=num_classes)
+        
+        model.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
+        model.maxpool = nn.Identity()
+    
+        for m in model.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode="fan_out", nonlinearity="relu")
+            elif isinstance(m, (nn.BatchNorm2d, nn.GroupNorm)):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+
+    if 'mobilenet_v3' in args.model:
+        from torchvision.models import mobilenet_v3_small
+        from torchvision.models.mobilenetv3 import _mobilenet_v3_conf, _mobilenet_v3
+
+        if args.depth == 'small':
+            model = mobilenet_v3_small(num_classes=num_classes)
+
+        # Modify the first convolutional layer to accept smaller images
+        model.features[0] = nn.Sequential(
+            nn.Upsample(size=(224, 224), mode='bilinear'),
+            *model.features[0],
+        )
+    
+    if 'shufflenet_v2' in args.model:
+        from torchvision.models import shufflenet_v2_x0_5
+
+        if args.depth == '0.5':
+            model = shufflenet_v2_x0_5(num_classes=num_classes)
+
+            model.conv1 = nn.Sequential(
+                nn.Upsample(size=(224, 224), mode='bilinear'),
+                *model.conv1
+            )
+
+    if 'densenet' in args.model:
+        from torchvision.models import densenet121
+
+        if args.depth == '121':
+            model = densenet121(num_classes=num_classes)
+
+        model.features.conv0 = nn.Conv2d(3, 64, 3, 1, 1, bias=False)
+        model.features.pool0 = nn.Identity()
+
+        for m in model.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight)
+            elif isinstance(m, nn.BatchNorm2d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.Linear):
+                nn.init.constant_(m.bias, 0)
+
+
     return model
 
 
 if __name__ == '__main__':
+
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', type=str, default='convnext', help='Model name')
-    parser.add_argument('--depth', type=str, default='tiny', help='Model depth')
+    parser.add_argument('--model', type=str, default='resnet', help='Model name')
+    parser.add_argument('--depth', type=str, default='18', help='Model depth')
+    parser.add_argument('--dataset', type=str, default='imagenet100', help='')
     parser.add_argument('--remark', type=dict, default={}, help='Remark')
     args = parser.parse_args()
     

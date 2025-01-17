@@ -53,4 +53,6 @@ class VGG_cifar(nn.Module):
         return nn.Sequential(OrderedDict(layers))
 
 
-#test()
+if __name__ == '__main__':
+    model = VGG_cifar('16', 100)
+    print(model)

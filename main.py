@@ -79,6 +79,21 @@ elif args.dataset == 'tiny-imagenet-200':
     num_classes = 200
     full_trainset = datasets.ImageFolder(root=join(dataset_path, 'train'))
     testset = datasets.ImageFolder(root=join(dataset_path, 'val'))
+elif args.dataset == 'imagenet100':
+    num_classes = 100
+
+    train_datasets = []
+    for i in range(1, 5):
+        train_dir = join(dataset_path, f'train.X{i}')
+        train_dataset = datasets.ImageFolder(train_dir)
+        train_datasets.append(train_dataset)
+
+    testset = datasets.ImageFolder(root=join(dataset_path, 'val.X'))
+
+    for ds in train_datasets:
+        ds.class_to_idx = testset.class_to_idx
+        ds.samples = [(path, ds.class_to_idx[path.split('/')[-2]]) for path, _ in ds.samples]
+    full_trainset = torch.utils.data.ConcatDataset(train_datasets)
 else:
     raise ValueError('Dataset not found')
 
@@ -111,7 +126,8 @@ print('| Train mean : ', train_mean, ', std : ', train_std)
 
 # set transform
 transform_train = transforms.Compose([
-    transforms.RandomCrop(cf.crop_size[args.dataset], padding=4),
+    transforms.Resize(cf.resize[args.dataset]),
+    transforms.RandomCrop(cf.crop_size[args.dataset], padding=cf.padding[args.dataset]),
     transforms.RandomHorizontalFlip(),
     transforms.ToTensor(),
     transforms.Normalize(train_mean, train_std),
