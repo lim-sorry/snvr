@@ -41,6 +41,10 @@ def train(model, trainloader, criterion, optimizer):
         optimizer.zero_grad()
         outputs = model(inputs)
         loss = criterion(outputs, targets)
+        # raise ValueError if nan
+        if math.isnan(loss.item()):
+            raise ValueError("Loss is nan")
+
         loss.backward()
         optimizer.step()
         
@@ -100,14 +104,30 @@ class CustomDataset(Dataset):
         return len(self.indices)
     
 
-from torchvision.models import resnet18, resnet34, vgg16_bn, vgg19_bn
+from torchvision.models import resnet18, resnet34, resnet50, resnet101, resnet152, vgg16_bn, vgg19_bn
 
 def getNetwork(args, num_classes):
     if args.model == 'resnet':
+        from torchvision.models.resnet import BasicBlock, _resnet
+
         if args.depth == '18':
             model = resnet18(num_classes=num_classes)
         if args.depth == '34':
             model = resnet34(num_classes=num_classes)
+        if args.depth == '34x1.5':
+            model = _resnet(BasicBlock, [5, 6, 9, 5], None, True, num_classes=num_classes)
+        if args.depth == '34x2.0':
+            # double layer depth
+            model = _resnet(BasicBlock, [6, 8, 12, 6], None, True, num_classes=num_classes)
+        if args.depth == '22':
+            # double layer depth
+            model = _resnet(BasicBlock, [3, 4, 12, 3], None, True, num_classes=num_classes)
+        if args.depth == '50':
+            model = resnet50(num_classes=num_classes)
+        if args.depth == '101':
+            model = resnet101(num_classes=num_classes)
+        if args.depth == '152':
+            model = resnet152(num_classes=num_classes)
 
         if args.dataset == 'imagenet100':
             pass
@@ -207,24 +227,24 @@ def getNetwork(args, num_classes):
             model = _convnext(block_setting, stochastic_depth_prob, weights, progress=True, num_classes=num_classes)
             print(model)
 
-            # features[0][0]의 Conv2d layer 수정
-            if isinstance(model.features[0][0], nn.Conv2d):
-                in_channels = 3
-                out_channels = int(96 * scale_factor)
-                model.features[0][0] = nn.Conv2d(
-                    in_channels, 
-                    out_channels, 
-                    kernel_size=1, 
-                    stride=1, 
-                    padding=0, 
-                    bias=False
-                )
+        #     # features[0][0]의 Conv2d layer 수정
+        #     if isinstance(model.features[0][0], nn.Conv2d):
+        #         in_channels = 3
+        #         out_channels = int(96 * scale_factor)
+        #         model.features[0][0] = nn.Conv2d(
+        #             in_channels, 
+        #             out_channels, 
+        #             kernel_size=1, 
+        #             stride=1, 
+        #             padding=0, 
+        #             bias=False
+        #         )
 
-        for m in model.modules():
-            if isinstance(m, (nn.Conv2d, nn.Linear)):
-                nn.init.trunc_normal_(m.weight, std=0.02)
-                if m.bias is not None:
-                    nn.init.zeros_(m.bias)
+        # for m in model.modules():
+        #     if isinstance(m, (nn.Conv2d, nn.Linear)):
+        #         nn.init.trunc_normal_(m.weight, std=0.02)
+        #         if m.bias is not None:
+        #             nn.init.zeros_(m.bias)
 
     if 'resnext' in args.model:
         from torchvision.models import resnext50_32x4d
@@ -285,7 +305,36 @@ def getNetwork(args, num_classes):
                 nn.init.constant_(m.bias, 0)
             elif isinstance(m, nn.Linear):
                 nn.init.constant_(m.bias, 0)
+    
+    if 'vit' in args.model:
+        from torchvision.models import vit_b_32, vit_b_16
+        from torchvision.models.vision_transformer import _vision_transformer
 
+        scale_factor = float(args.model.split('_')[-1])
+
+        if 'vit_32' in args.model:
+            model = _vision_transformer(
+                patch_size=int(args.depth),
+                num_layers=12,
+                num_heads=12,
+                hidden_dim=int(768 * scale_factor),
+                mlp_dim=int(3072 * scale_factor),
+                weights=None,
+                progress=True,
+                num_classes=num_classes,
+                image_size=32
+            )
+        else:
+            model = _vision_transformer(
+                patch_size=int(args.depth),
+                num_layers=12,
+                num_heads=12,
+                hidden_dim=int(768 * scale_factor),
+                mlp_dim=int(3072 * scale_factor),
+                weights=None,
+                progress=True,
+                num_classes=num_classes,
+            )           
 
     return model
 
@@ -294,11 +343,25 @@ if __name__ == '__main__':
 
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', type=str, default='resnet', help='Model name')
-    parser.add_argument('--depth', type=str, default='18', help='Model depth')
+    parser.add_argument('--model', type=str, default='convnext', help='Model name')
+    parser.add_argument('--depth', type=str, default='tiny', help='Model depth')
     parser.add_argument('--dataset', type=str, default='imagenet100', help='')
     parser.add_argument('--remark', type=dict, default={}, help='Remark')
     args = parser.parse_args()
     
     model = getNetwork(args, 100)
     print(model)
+
+    # model parameters count
+    n_params = sum(p.numel() for p in model.parameters())
+
+    # x = torch.randn(4, 3, 32, 32)
+    # y = model(x)
+    # print(y.shape)
+
+    # layer_idx = 0
+    # # print module name and p.shape if p.dim() > 1
+    # for name, p in model.named_parameters():
+    #     if p.dim() > 1 and p.shape[0] != 1:
+    #         print(layer_idx, name, p.shape)
+    #         layer_idx += 1

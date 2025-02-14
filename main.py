@@ -81,19 +81,8 @@ elif args.dataset == 'tiny-imagenet-200':
     testset = datasets.ImageFolder(root=join(dataset_path, 'val'))
 elif args.dataset == 'imagenet100':
     num_classes = 100
-
-    train_datasets = []
-    for i in range(1, 5):
-        train_dir = join(dataset_path, f'train.X{i}')
-        train_dataset = datasets.ImageFolder(train_dir)
-        train_datasets.append(train_dataset)
-
+    full_trainset = datasets.ImageFolder(root=join(dataset_path, 'train'))
     testset = datasets.ImageFolder(root=join(dataset_path, 'val.X'))
-
-    for ds in train_datasets:
-        ds.class_to_idx = testset.class_to_idx
-        ds.samples = [(path, ds.class_to_idx[path.split('/')[-2]]) for path, _ in ds.samples]
-    full_trainset = torch.utils.data.ConcatDataset(train_datasets)
 else:
     raise ValueError('Dataset not found')
 
@@ -111,32 +100,39 @@ train_idx, valid_idx = train_test_split(train_idx, train_size=0.8, stratify=[ful
 print(f"| trainset idx: {train_idx[:5]}")
 print(f"| validset idx: {valid_idx[:5]}")
 
-# calculate mean and std of trainset for normalization
-train_images = []
-if args.dataset == 'tiny-imagenet-200':
-    for idx in train_idx:
-        train_images.append(np.array(full_trainset[idx][0]))
+if 'vit_b' in args.model or 'convnext' in args.model:
+    print("| Using 224x224 image size")
+    # set transform
+    transform_train = transforms.Compose([
+        transforms.Resize(256),
+        transforms.RandomCrop(224),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        transforms.Normalize(cf.mean[args.dataset], cf.std[args.dataset]),
+    ])
+    transform_test = transforms.Compose([
+        transforms.Resize(256),
+        transforms.CenterCrop(224),
+        transforms.ToTensor(),
+        transforms.Normalize(cf.mean[args.dataset], cf.std[args.dataset]),
+    ])
 else:
-    for idx in train_idx:
-        train_images.append(full_trainset.data[idx])
-train_images = (np.stack(train_images) / 255.0).reshape(-1,3)
-train_mean = np.mean(train_images, axis=0)
-train_std = np.std(train_images, axis=0)
-print('| Train mean : ', train_mean, ', std : ', train_std)
+    # set transform
+    transform_train = transforms.Compose([
+        transforms.Resize(cf.resize[args.dataset]),
+        transforms.RandomCrop(cf.crop_size[args.dataset], padding=cf.padding[args.dataset]),
+        transforms.RandomHorizontalFlip(),
+        transforms.ToTensor(),
+        transforms.Normalize(cf.mean[args.dataset], cf.std[args.dataset]),
+    ])
 
-# set transform
-transform_train = transforms.Compose([
-    transforms.Resize(cf.resize[args.dataset]),
-    transforms.RandomCrop(cf.crop_size[args.dataset], padding=cf.padding[args.dataset]),
-    transforms.RandomHorizontalFlip(),
-    transforms.ToTensor(),
-    transforms.Normalize(train_mean, train_std),
-])
+    transform_test = transforms.Compose([
+        transforms.Resize(cf.resize[args.dataset]),
+        transforms.CenterCrop(cf.crop_size[args.dataset]),
+        transforms.ToTensor(),
+        transforms.Normalize(cf.mean[args.dataset], cf.std[args.dataset]),
+    ])
 
-transform_test = transforms.Compose([
-    transforms.ToTensor(),
-    transforms.Normalize(train_mean, train_std),
-])
 
 # set dataset
 trainset = CustomDataset(full_trainset, train_idx, transform=transform_train)
@@ -170,13 +166,15 @@ elif args.optim_type == 'SGDSNR':
     optimizer = SGDSNR(model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay, snr=args.snr, snvr=args.snvr, remark=args.remark)
 else:
     raise ValueError('Optimizer not found')
+if 'convnext' in args.model:
+    optimizer = torch.optim.AdamW(model.parameters())
 
 layer_idx = 0
-for group in optimizer.param_groups:
-    for p in group['params']:
-        if p.dim() > 1:
-            print(layer_idx, p.shape)
-            layer_idx += 1
+# print module name and p.shape if p.dim() > 1
+for name, p in model.named_parameters():
+    if p.dim() > 1 and p.shape[0] != 1:
+        print(layer_idx, name, p.shape)
+        layer_idx += 1
 
 # Learning Rate Scheduler
 if args.lr_sche == 'cosine':
@@ -240,7 +238,6 @@ for epoch in range(args.num_epochs):
     # print stats
     print(f"| Epoch {epoch+1}/{args.num_epochs} | Train Acc: {train_acc:.2f} | Train Loss: {train_loss:.4f} | Valid Acc: {valid_acc:.2f} | Valid Loss: {valid_loss:.4f} | Test Acc: {test_acc:.2f} | Test Loss: {test_loss:.4f} {' best' if is_best else ''}\n")
 
-    # update learning rate
     if args.lr_sche == 'cosine':
         scheduler.step()
 

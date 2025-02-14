@@ -3,8 +3,7 @@ from torch.optim.optimizer import Optimizer, required
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-
-def compute_weight(weight, do_power_iteration=True, n_power_iterations=5):
+def compute_weight(weight, n_power_iterations=5, eps=1e-12):
     weight_mat = weight
 
     height = weight_mat.size(0)
@@ -13,9 +12,9 @@ def compute_weight(weight, do_power_iteration=True, n_power_iterations=5):
     u = torch.randn(1, weight_mat.shape[0]).to(device)  # move u to GPU
     for i in range(n_power_iterations):
         v = torch.mm(u, weight_mat)  # [1, n]
-        v = v / torch.norm(v)
+        v = v / (torch.norm(v) + eps)
         u = torch.mm(v, weight_mat.T)  # [1, m]
-        u = u / torch.norm(u)
+        u = u / (torch.norm(u) + eps)
 
     sn = (torch.mul(torch.ones(1, weight_mat.shape[0]).to(device), torch.sum(torch.mm(torch.mm(u, weight_mat), v.T)))).T
     uv = torch.mm(u.T, v)
@@ -88,7 +87,7 @@ class SGDSNR(Optimizer):
                 for p in group['params']:
                     if p.grad is None:
                         continue
-                    if p.dim() > 1:
+                    if p.dim() > 1 and p.shape[0] != 1:
                         sn_dict[layer_idx], uv_dict[layer_idx] = compute_weight(p.to(device))
                         layer_idx += 1
                     else:
@@ -113,9 +112,10 @@ class SGDSNR(Optimizer):
                 if weight_decay != 0:
                     d_p = d_p.add(p, alpha=weight_decay)
 
-                if p.dim() > 1:
+                if p.dim() > 1 and p.shape[0] != 1:
                     if self.snr != 0:
                         sn, uv = sn_dict[layer_idx], uv_dict[layer_idx]
+                        # print((torch.reshape(torch.mul(sn, uv), p.shape) * self.snr))
                         d_p = d_p.add(torch.reshape(torch.mul(sn, uv), p.shape),
                                         alpha=self.snr)
                         if self.snvr != 0:
