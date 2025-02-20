@@ -112,7 +112,7 @@ class AdamWSNR(AdamW):
                 # Perform step weight decay
                 param.data.mul_(1 - lr * weight_decay)
 
-                if param.snr:
+                if self.snr and param.snr:
                     sn, uv = param.sn, param.uv
                     snr = torch.reshape(torch.mul(sn, uv), param.shape)
                     # add snr * self.snr to grad
@@ -174,8 +174,11 @@ if __name__ == '__main__':
     parser.add_argument('--num_workers', default=4, type=int, help='number of workers')
     parser.add_argument('--ckpt_path', default='test_ckpt', help='Checkpoint path')
     parser.add_argument('--data_path', default='..data', help='Data path')
+
     args = parser.parse_args()
     print(vars(args))
+
+    model_save = True
 
     seed = args.seed
     set_seed(seed)
@@ -265,6 +268,9 @@ if __name__ == '__main__':
             CNBlockConfig(384, None, 3),
         ]
         model = _convnext(block_setting, 0.1, None, True, num_classes=num_classes).cuda()
+    elif args.model == 'swin-v2-tiny':
+        from torchvision.models.swin_transformer import swin_v2_t
+        model =  swin_v2_t(num_classes=num_classes).cuda()
     elif args.model == 'swin-v2-tiny-0.5':
         from torchvision.models.swin_transformer import _swin_transformer, PatchMergingV2, SwinTransformerBlockV2
         model =  _swin_transformer(
@@ -281,7 +287,7 @@ if __name__ == '__main__':
             num_classes=num_classes,
         ).cuda()
     print(f"| Model: {args.model}")
-    print(model)
+    # print(model)
 
     optimizer = AdamWSNR(model.parameters(), lr=args.lr, snr=args.snr, snvr=args.snvr, weight_decay=args.weight_decay)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs-args.warm_up)
@@ -355,6 +361,7 @@ if __name__ == '__main__':
                 test_loss=test_loss,
                 test_acc=test_acc,
             )
+            best_model = model.state_dict()
         else:
             is_best = False 
         
@@ -375,3 +382,5 @@ if __name__ == '__main__':
 
     ckpt[seed] = history
     torch.save(ckpt, ckpt_path)
+    if model_save:
+        torch.save(best_model, ckpt_path.replace('.pth', '_model.pth'))

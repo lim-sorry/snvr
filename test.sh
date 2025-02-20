@@ -1,13 +1,13 @@
 # export CUBLAS_WORKSPACE_CONFIG=:4096:8
 export CUDA_LAUNCH_BLOCKING=1
 
-lines=(3 4 5)
+lines=(7 8 9)
 
 for line in "${lines[@]}"
     do
         cfg=$(sed -n "$line"p test.csv)
 
-        # seed_lst = 42 51 66 71 94
+        # seed_lst =42 51 66 71 94
         seed_lst=$(echo $cfg | awk -F, '{gsub(/^ *| *$/, "", $1); print $1}')
 
         dataset=$(echo $cfg | awk -F, '{gsub(/^ *| *$/, "", $2); print $2}')
