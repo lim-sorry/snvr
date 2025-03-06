@@ -1,7 +1,7 @@
 # export CUBLAS_WORKSPACE_CONFIG=:4096:8
 export CUDA_LAUNCH_BLOCKING=1
 
-lines=(2 3 4 5 6 7 8)
+lines=(3 2 4)
 
 for line in "${lines[@]}"
     do
@@ -20,7 +20,7 @@ for line in "${lines[@]}"
         epochs=$(echo $cfg | awk -F, '{gsub(/^ *| *$/, "", $9); print $9}')
         warm_up=$(echo $cfg | awk -F, '{gsub(/^ *| *$/, "", $10); print $10}')
         batch_size=$(echo $cfg | awk -F, '{gsub(/^ *| *$/, "", $11); print $11}')
-        optim=$(echo $cfg | awk -F, '{gsub(/^ *| *$/, "", $12); print $12}')
+        optim=$(echo "$cfg" | awk -F, '{gsub(/\r/, ""); gsub(/^ *| *$/, "", $12); print $12}')
 
         for seed in $(echo "$seed_lst" | tr " " "\n")
             do

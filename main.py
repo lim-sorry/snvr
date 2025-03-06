@@ -51,7 +51,7 @@ if __name__ == '__main__':
     parser.add_argument('--warm_up', default=10, type=int, help='warm up epochs')
     parser.add_argument('--batch_size', default=128, type=int, help='batch size')
 
-    parser.add_argument('--optim', default='adam', help='adam | adamw')
+    parser.add_argument('--optim', default='adam', type=str, help='adam | adamw')
     parser.add_argument('--num_workers', default=1, type=int, help='number of workers')
     parser.add_argument('--ckpt_path', default='ckpt', help='Checkpoint path')
     parser.add_argument('--data_path', default='..data', help='Data path')
@@ -156,9 +156,7 @@ if __name__ == '__main__':
     # print(model)
 
     if args.optim == 'adam':
-        from torch.optim import Adam
         optimizer = AdamSNR(model.parameters(), lr=args.lr, snr=args.snr, snvr=args.snvr, weight_decay=args.weight_decay)
-        # optimizer = Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     elif args.optim == 'adamw':
         optimizer = AdamWSNR(model.parameters(), lr=args.lr, snr=args.snr, snvr=args.snvr, weight_decay=args.weight_decay)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs-args.warm_up)
