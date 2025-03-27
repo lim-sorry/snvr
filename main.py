@@ -52,7 +52,7 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', default=128, type=int, help='batch size')
 
     parser.add_argument('--optim', default='adam', type=str, help='adam | adamw')
-    parser.add_argument('--num_workers', default=1, type=int, help='number of workers')
+    parser.add_argument('--num_workers', default=4, type=int, help='number of workers')
     parser.add_argument('--ckpt_path', default='ckpt', help='Checkpoint path')
     parser.add_argument('--data_path', default='..data', help='Data path')
 
@@ -62,7 +62,7 @@ if __name__ == '__main__':
     set_seed(seed)
 
     overwrite = False
-    model_save = True
+    model_save = False
     print(vars(args))
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -100,6 +100,27 @@ if __name__ == '__main__':
         full_trainset = CIFAR100(root=f"{args.data_path}/cifar100", train=True, download=True)
         testset = CIFAR100(root=f"{args.data_path}/cifar100", train=False, download=True)
         num_classes = 100
+    elif args.dataset == 'cifar100-224':
+        transform = transforms.Compose([
+            transforms.RandomChoice([
+                transforms.Compose([
+                    transforms.Resize(256),
+                    transforms.RandomCrop(224),
+                ]),
+                transforms.Resize(224)
+            ]),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            transforms.Normalize((0.5071, 0.4867, 0.4408), (0.2675, 0.2565, 0.2761)),
+        ])
+        test_transform = transforms.Compose([
+            transforms.Resize(224),
+            transforms.ToTensor(),
+            transforms.Normalize((0.5071, 0.4867, 0.4408), (0.2675, 0.2565, 0.2761)),
+        ])
+        full_trainset = CIFAR100(root=f"{args.data_path}/cifar100", train=True, download=True)
+        testset = CIFAR100(root=f"{args.data_path}/cifar100", train=False, download=True)
+        num_classes = 100
     elif args.dataset == 'cifar10':
         transform = transforms.Compose([
             transforms.RandomCrop(32, padding=4),
@@ -125,6 +146,23 @@ if __name__ == '__main__':
         test_transform = transforms.Compose([
             transforms.Resize(256),
             transforms.CenterCrop(224),
+            transforms.ToTensor(),
+            transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+        ])
+        full_trainset = ImageFolder(root=f"{args.data_path}/imagenet/train")
+        testset = ImageFolder(root=f"{args.data_path}/imagenet/val")
+        num_classes = 1000
+    elif args.dataset == 'imagenet-112':
+        transform = transforms.Compose([
+            transforms.Resize(128),
+            transforms.RandomCrop(112),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
+        ])
+        test_transform = transforms.Compose([
+            transforms.Resize(128),
+            transforms.CenterCrop(112),
             transforms.ToTensor(),
             transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
         ])
@@ -275,3 +313,4 @@ if __name__ == '__main__':
     torch.save(ckpt, ckpt_path)
     if model_save:
         torch.save(best_model, ckpt_path.replace('.pth', '_model.pth'))
+    print(f"training done...\n\n")

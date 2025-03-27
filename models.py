@@ -3,7 +3,7 @@ import torch.nn as nn
 from torchvision.models.resnet import resnet18, resnet34
 from torchvision.models.vgg import vgg16, vgg19
 from torchvision.models.convnext import convnext_tiny
-from torchvision.models.swin_transformer import swin_v2_t
+from torchvision.models.swin_transformer import swin_v2_t, swin_t
 
 def get_model(model_name: str, dataset: str, num_classes: int):
     name, depth = model_name.split('_')
@@ -74,11 +74,15 @@ def get_model(model_name: str, dataset: str, num_classes: int):
                 downsample_layer=PatchMergingV2,
                 num_classes=num_classes,
             )
+
+    if name == 'swin':
+        if depth == 'tiny':
+            model = swin_t(num_classes=num_classes)
     return model
     
 if __name__ == '__main__':
-    model = get_model('convnext_tiny', 'cifar100', 100)
+    model = get_model('convnext_tiny', 'imagenet-112', 100)
     print(model)
-    x = torch.randn(1, 3, 32, 32)
+    x = torch.randn(1, 3, 112, 112)
     y = model(x)
     print(y.shape)

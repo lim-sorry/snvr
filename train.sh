@@ -1,7 +1,7 @@
 # export CUBLAS_WORKSPACE_CONFIG=:4096:8
 export CUDA_LAUNCH_BLOCKING=1
 
-lines=(3 2 4)
+lines=(2 3 4)
 
 for line in "${lines[@]}"
     do
