@@ -1,33 +1,56 @@
-seed, dataset     , usage, model           , lr  , snr , snvr, weight_decay, epochs, warm_up, batch_size, optim
-  42, imagenet-112,  0.1,  convnext_tiny-0.5,4e-3, 0.0 , 0.0 , 0.05        ,    200,      10,       1024, adamw
-  42, imagenet    ,  0.05, swin_tiny       , 1e-3, 0.0 , 0.0 , 0.05        ,    200,      10,        128, adamw
-  42, imagenet-112,  0.05, convnext_tiny   , 4e-3, 0.0 , 0.0 , 1e-5        ,    200,      10,        128, adam
-  42, imagenet-112,  0.05, convnext_tiny   , 4e-3, 1e-4, 0.0 , 0.0         ,    200,      10,        128, adam
-  42, imagenet-112,  0.05, convnext_tiny   , 4e-3, 1e-5, 0.0 , 0.0         ,    200,      10,        128, adam
-  42, imagenet-112,  0.05, convnext_tiny   , 4e-3, 1e-6, 0.0 , 0.0         ,    200,      10,        128, adam
-  42, imagenet-112,  0.05, convnext_tiny   , 4e-3, 1e-7, 0.0 , 0.0         ,    200,      10,        128, adam
-  42, imagenet-112,  0.05, convnext_tiny   , 4e-3, 1e-6, 1.0 , 0.0         ,    200,      10,        128, adam
-  42, imagenet-112,  0.05, convnext_tiny   , 4e-3, 1e-6, 0.1 , 0.0         ,    200,      10,        128, adam
-  42, imagenet-112,  0.05, convnext_tiny   , 4e-3, 1e-6, 0.01, 0.0         ,    200,      10,        128, adam
-  42, imagenet-112,  0.05, convnext_tiny   , 4e-3, 1e-6, 1e-3, 0.0         ,    200,      10,        128, adam
-  42, imagenet-112,  0.05, convnext_tiny   , 4e-3, 1e-6, 1e-4, 0.0         ,    200,      10,        128, adam
-  42, imagenet-112,  0.05, convnext_tiny   , 4e-3, 1e-6, 1e-5, 0.0         ,    200,      10,        128, adam
-  42, imagenet-112,  0.05, convnext_tiny   , 4e-3, 1e-5, 0.1 , 0.0         ,    200,      10,        128, adam
-  42, imagenet-112,  0.05, convnext_tiny   , 4e-3, 1e-5, 0.01, 0.0         ,    200,      10,        128, adam
-  42, imagenet-112,  0.05, convnext_tiny   , 4e-3, 1e-5, 1e-3, 0.0         ,    200,      10,        128, adam
-  42, imagenet-112,  0.05, swin-v2_tiny-0.5, 1e-3, 0.0 , 0.0 , 0.0         ,    200,      10,        512, adam
-  42, imagenet-112,  0.05, swin-v2_tiny-0.5, 1e-4, 0.0 , 0.0 , 0.0         ,    200,      10,        512, adam
-  42, imagenet-112,  0.05, swin-v2_tiny-0.5, 1e-4, 0.0 , 0.0 , 1e-2        ,    200,      10,        512, adam
-  42, imagenet-112,  0.05, swin-v2_tiny-0.5, 1e-4, 0.0 , 0.0 , 1e-3        ,    200,      10,        512, adam
-  42, imagenet-112,  0.05, swin-v2_tiny-0.5, 1e-4, 0.0 , 0.0 , 1e-4        ,    200,      10,        512, adam
-  42, imagenet-112,  0.05, swin-v2_tiny-0.5, 1e-4, 0.0 , 0.0 , 1e-5        ,    200,      10,        512, adam
-  42, imagenet-112,  0.05, swin-v2_tiny-0.5, 1e-4, 0.01, 0.0 , 1e-3        ,    200,      10,        512, adam
-  42, imagenet-112,  0.05, swin-v2_tiny-0.5, 1e-4, 1e-3, 0.0 , 1e-3        ,    200,      10,        512, adam
-  42, imagenet-112,  0.05, swin-v2_tiny-0.5, 1e-4, 1e-4, 0.0 , 1e-3        ,    200,      10,        512, adam
-  42, imagenet-112,  0.05, swin-v2_tiny-0.5, 1e-4, 1e-5, 0.0 , 1e-3        ,    200,      10,        512, adam
-  42, imagenet-112,  0.05, swin-v2_tiny-0.5, 1e-4, 1e-3, 0.0 , 0.0         ,    200,      10,        512, adam
-  42, imagenet-112,  0.05, swin-v2_tiny-0.5, 1e-4, 1e-4, 0.0 , 0.0         ,    200,      10,        512, adam
-  42, imagenet-112,  0.05, swin-v2_tiny-0.5, 1e-4, 1e-5, 0.0 , 0.0         ,    200,      10,        512, adam
-  42, imagenet-112,  0.05, swin-v2_tiny-0.5, 1e-4, 1e-6, 0.0 , 0.0         ,    200,      10,        512, adam
-  42, imagenet-112,  0.05, swin-v2_tiny-0.5, 1e-4, 1e-7, 0.0 , 0.0         ,    200,      10,        512, adam
-  42, imagenet-112,  0.05, swin-v2_tiny-0.5, 1e-4, 1e-4, 1.0 , 0.0         ,    200,      10,        512, adam
+seed, dataset     , usage, model            , lr  , snr , snvr, weight_decay, epochs, warm_up, batch_size, optim, prefix
+  42, imagenet    ,  0.05, convnext_tiny-0.5, 4e-3, 0.0 , 0.0 , 0.05        ,    200,      10,        256, adamw, 
+  42, imagenet    ,  0.05, convnext_tiny-0.5, 4e-3, 1e-3, 0.0 , 0.0         ,    200,      10,        256, adamw, decouple_
+  42, imagenet    ,  0.05, convnext_tiny-0.5, 4e-3, 1e-5, 0.0 , 0.05        ,    200,      10,        256, adamw, 
+  42, imagenet    ,  0.05, convnext_tiny-0.5, 4e-3, 1e-6, 0.0 , 0.05        ,    200,      10,        256, adamw, 
+  42, imagenet    ,  0.05, convnext_tiny-0.5, 4e-3, 1e-6, 0.1 , 0.05        ,    200,      10,        256, adamw, 
+  42, imagenet-112,  0.05, convnext_tiny-0.5, 4e-3, 0.0 , 0.0 , 5e-4        ,    200,      10,       1024, adam , 
+  42, imagenet-112,  0.05, convnext_tiny-0.5, 4e-3, 1e-5, 0.0 , 5e-4        ,    200,      10,       1024, adam , 
+  42, imagenet-112,  0.05, convnext_tiny-0.5, 4e-3, 1e-6, 0.0 , 5e-4        ,    200,      10,       1024, adam , 
+  42, imagenet-112,  0.05, convnext_tiny-0.5, 4e-3, 1e-7, 0.0 , 5e-4        ,    200,      10,       1024, adam , 
+  42, imagenet-112,  0.05, convnext_tiny-0.5, 4e-3, 1e-5, 0.0 , 0.0         ,    200,      10,       1024, adam , 
+  42, imagenet-112,  0.05, convnext_tiny-0.5, 4e-3, 0.0 , 0.0 , 5e-5        ,    200,      10,       1024, adam , 
+  42, imagenet-112,  0.1 , convnext_tiny-0.5, 4e-3, 0.0 , 0.0 , 0.5         ,    200,      10,       1024, adamw, 
+  42, imagenet-112,  0.1 , convnext_tiny-0.5, 4e-3, 0.0 , 0.0 , 0.05        ,    200,      10,       1024, adamw, 
+  42, imagenet-112,  0.1 , convnext_tiny-0.5, 4e-3, 0.0 , 0.0 , 5e-3        ,    200,      10,       1024, adamw, 
+  42, imagenet-112,  0.1 , convnext_tiny-0.5, 4e-3, 1e-3, 0.0 , 0.05        ,    200,      10,       1024, adamw, 
+  42, imagenet-112,  0.1 , convnext_tiny-0.5, 4e-3, 1e-4, 0.0 , 0.05        ,    200,      10,       1024, adamw, 
+  42, imagenet-112,  0.1 , convnext_tiny-0.5, 4e-3, 1e-5, 0.0 , 0.05        ,    200,      10,       1024, adamw, 
+  42, imagenet-112,  0.1 , convnext_tiny-0.5, 4e-3, 1e-6, 0.0 , 0.05        ,    200,      10,       1024, adamw, 
+  42, imagenet-112,  0.1 , convnext_tiny-0.5, 4e-3, 1e-7, 0.0 , 0.05        ,    200,      10,       1024, adamw, 
+  42, imagenet-112,  0.1 , convnext_tiny-0.5, 4e-3, 1e-6, 0.1 , 0.05        ,    200,      10,       1024, adamw, 
+  42, imagenet-112,  0.1 , convnext_tiny-0.5, 4e-3, 1e-6, 0.01, 0.05        ,    200,      10,       1024, adamw, 
+  42, imagenet-112,  0.1 , convnext_tiny-0.5, 4e-3, 1e-6, 1e-3, 0.05        ,    200,      10,       1024, adamw, 
+  42, imagenet-112,  0.1 , convnext_tiny-0.5, 4e-3, 1e-6, 1e-4, 0.05        ,    200,      10,       1024, adamw, 
+  42, imagenet    ,  0.05, swin_tiny        , 1e-3, 0.0 , 0.0 , 0.05        ,    200,      10,        128, adamw, 
+  42, imagenet-112,  0.05, convnext_tiny    , 4e-3, 0.0 , 0.0 , 1e-5        ,    200,      10,        128, adam , 
+  42, imagenet-112,  0.05, convnext_tiny    , 4e-3, 1e-4, 0.0 , 0.0         ,    200,      10,        128, adam , 
+  42, imagenet-112,  0.05, convnext_tiny    , 4e-3, 1e-5, 0.0 , 0.0         ,    200,      10,        128, adam , 
+  42, imagenet-112,  0.05, convnext_tiny    , 4e-3, 1e-6, 0.0 , 0.0         ,    200,      10,        128, adam , 
+  42, imagenet-112,  0.05, convnext_tiny    , 4e-3, 1e-7, 0.0 , 0.0         ,    200,      10,        128, adam , 
+  42, imagenet-112,  0.05, convnext_tiny    , 4e-3, 1e-6, 1.0 , 0.0         ,    200,      10,        128, adam , 
+  42, imagenet-112,  0.05, convnext_tiny    , 4e-3, 1e-6, 0.1 , 0.0         ,    200,      10,        128, adam , 
+  42, imagenet-112,  0.05, convnext_tiny    , 4e-3, 1e-6, 0.01, 0.0         ,    200,      10,        128, adam , 
+  42, imagenet-112,  0.05, convnext_tiny    , 4e-3, 1e-6, 1e-3, 0.0         ,    200,      10,        128, adam , 
+  42, imagenet-112,  0.05, convnext_tiny    , 4e-3, 1e-6, 1e-4, 0.0         ,    200,      10,        128, adam , 
+  42, imagenet-112,  0.05, convnext_tiny    , 4e-3, 1e-6, 1e-5, 0.0         ,    200,      10,        128, adam , 
+  42, imagenet-112,  0.05, convnext_tiny    , 4e-3, 1e-5, 0.1 , 0.0         ,    200,      10,        128, adam , 
+  42, imagenet-112,  0.05, convnext_tiny    , 4e-3, 1e-5, 0.01, 0.0         ,    200,      10,        128, adam , 
+  42, imagenet-112,  0.05, convnext_tiny    , 4e-3, 1e-5, 1e-3, 0.0         ,    200,      10,        128, adam , 
+  42, imagenet-112,  0.05, swin-v2_tiny-0.5 , 1e-3, 0.0 , 0.0 , 0.0         ,    200,      10,        512, adam , 
+  42, imagenet-112,  0.05, swin-v2_tiny-0.5 , 1e-4, 0.0 , 0.0 , 0.0         ,    200,      10,        512, adam , 
+  42, imagenet-112,  0.05, swin-v2_tiny-0.5 , 1e-4, 0.0 , 0.0 , 1e-2        ,    200,      10,        512, adam , 
+  42, imagenet-112,  0.05, swin-v2_tiny-0.5 , 1e-4, 0.0 , 0.0 , 1e-3        ,    200,      10,        512, adam , 
+  42, imagenet-112,  0.05, swin-v2_tiny-0.5 , 1e-4, 0.0 , 0.0 , 1e-4        ,    200,      10,        512, adam , 
+  42, imagenet-112,  0.05, swin-v2_tiny-0.5 , 1e-4, 0.0 , 0.0 , 1e-5        ,    200,      10,        512, adam , 
+  42, imagenet-112,  0.05, swin-v2_tiny-0.5 , 1e-4, 0.01, 0.0 , 1e-3        ,    200,      10,        512, adam , 
+  42, imagenet-112,  0.05, swin-v2_tiny-0.5 , 1e-4, 1e-3, 0.0 , 1e-3        ,    200,      10,        512, adam , 
+  42, imagenet-112,  0.05, swin-v2_tiny-0.5 , 1e-4, 1e-4, 0.0 , 1e-3        ,    200,      10,        512, adam , 
+  42, imagenet-112,  0.05, swin-v2_tiny-0.5 , 1e-4, 1e-5, 0.0 , 1e-3        ,    200,      10,        512, adam , 
+  42, imagenet-112,  0.05, swin-v2_tiny-0.5 , 1e-4, 1e-3, 0.0 , 0.0         ,    200,      10,        512, adam , 
+  42, imagenet-112,  0.05, swin-v2_tiny-0.5 , 1e-4, 1e-4, 0.0 , 0.0         ,    200,      10,        512, adam , 
+  42, imagenet-112,  0.05, swin-v2_tiny-0.5 , 1e-4, 1e-5, 0.0 , 0.0         ,    200,      10,        512, adam , 
+  42, imagenet-112,  0.05, swin-v2_tiny-0.5 , 1e-4, 1e-6, 0.0 , 0.0         ,    200,      10,        512, adam , 
+  42, imagenet-112,  0.05, swin-v2_tiny-0.5 , 1e-4, 1e-7, 0.0 , 0.0         ,    200,      10,        512, adam , 
+  42, imagenet-112,  0.05, swin-v2_tiny-0.5 , 1e-4, 1e-4, 1.0 , 0.0         ,    200,      10,        512, adam , 
+    , 

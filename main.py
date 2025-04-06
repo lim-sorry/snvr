@@ -18,7 +18,8 @@ import random
 import argparse
 
 from models import get_model
-from snvr import AdamSNR, AdamWSNR
+from snvr import SGDSNR, AdamSNR, AdamWSNR
+from tempbalance import Tempbalance, cosine_decay
 from utils import set_seed
 
 class CustomDataset(Dataset):
@@ -52,6 +53,7 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', default=128, type=int, help='batch size')
 
     parser.add_argument('--optim', default='adam', type=str, help='adam | adamw')
+    parser.add_argument('--prefix', default='', type=str, help='prefix for experiment setup')
     parser.add_argument('--num_workers', default=4, type=int, help='number of workers')
     parser.add_argument('--ckpt_path', default='ckpt', help='Checkpoint path')
     parser.add_argument('--data_path', default='..data', help='Data path')
@@ -62,7 +64,8 @@ if __name__ == '__main__':
     set_seed(seed)
 
     overwrite = False
-    model_save = False
+    model_save = True if args.usage == '1.00' else False
+    print(f"| Overwrite: {overwrite} | Model save: {model_save}")
     print(vars(args))
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -70,7 +73,7 @@ if __name__ == '__main__':
 
     if not os.path.exists(args.ckpt_path):
         os.mkdir(args.ckpt_path)
-    ckpt_path = f"{args.ckpt_path}/{args.dataset}_{args.usage}_{args.model}_{args.lr}_{args.snr}_{args.snvr}_{args.weight_decay}.pth"
+    ckpt_path = f"{args.ckpt_path}/{args.prefix}{args.dataset}_{args.usage}_{args.model}_{args.lr}_{args.snr}_{args.snvr}_{args.weight_decay}_{args.optim}.pth"
     print(f"| Checkpoint path: {ckpt_path}")
     args.usage = float(args.usage)
     args.lr = float(args.lr)
@@ -195,9 +198,20 @@ if __name__ == '__main__':
 
     if args.optim == 'adam':
         optimizer = AdamSNR(model.parameters(), lr=args.lr, snr=args.snr, snvr=args.snvr, weight_decay=args.weight_decay)
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs-args.warm_up)
     elif args.optim == 'adamw':
-        optimizer = AdamWSNR(model.parameters(), lr=args.lr, snr=args.snr, snvr=args.snvr, weight_decay=args.weight_decay)
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs-args.warm_up)
+        decouple = True if 'decouple' in args.prefix else False
+        optimizer = AdamWSNR(model.parameters(), lr=args.lr, snr=args.snr, snvr=args.snvr, weight_decay=args.weight_decay, decouple=decouple)
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs-args.warm_up)
+    elif args.optim == 'sgd':
+        optimizer = SGDSNR(model.parameters(), lr=args.lr, snr=args.snr, snvr=args.snvr, weight_decay=args.weight_decay)
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs-args.warm_up)
+    elif args.optim == 'tb-adam':
+        optimizer = AdamSNR(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+        scheduler = Tempbalance(model)
+    elif args.optim == 'tb-sgd':
+        optimizer = SGDSNR(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+        scheduler = Tempbalance(model)
     criterion = nn.CrossEntropyLoss()
 
     history = dict(
@@ -209,6 +223,7 @@ if __name__ == '__main__':
         test_loss=[],
         test_top1_acc=[],
         test_top5_acc=[],
+        train_time=[],
         best_epoch={}
     )
     best_top1_acc = 0
@@ -218,6 +233,7 @@ if __name__ == '__main__':
         model.train()
         train_loss = 0
 
+        train_time_start = time.time()
         for data, target in trainloader:
             data, target = data.to(device), target.to(device)
             output = model(data)
@@ -226,6 +242,7 @@ if __name__ == '__main__':
             loss.backward()
             optimizer.step()
             train_loss += loss.item()
+        train_time = time.time() - train_time_start
 
         train_loss /= len(trainloader)
 
@@ -292,7 +309,11 @@ if __name__ == '__main__':
             for pg in optimizer.param_groups:
                 pg['lr'] = args.lr * lr_scale
         else:
-            scheduler.step()
+            if 'tb' in args.optim:
+                untuned_lr = cosine_decay(args.lr, epoch-args.warm_up, args.epochs-args.warm_up)
+                scheduler.step(optimizer, untuned_lr)
+            else:
+                scheduler.step()
 
         history['train_loss'].append(train_loss)
         history['valid_loss'].append(valid_loss)
@@ -301,6 +322,7 @@ if __name__ == '__main__':
         history['test_loss'].append(test_loss)
         history['test_top1_acc'].append(test_top1_acc)
         history['test_top5_acc'].append(test_top5_acc)
+        history['train_time'].append(train_time)
 
         # hour, minute left
         time_elapsed = time.time() - time_start
