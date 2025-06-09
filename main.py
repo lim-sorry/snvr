@@ -310,6 +310,9 @@ def throughput(data_loader, model, logger):
 if __name__ == '__main__':
     args, config = parse_option()
 
+    if os.path.exists(os.path.join(config.OUTPUT, 'results.pkl')):
+        exit()
+
     # if config.AMP_OPT_LEVEL:
     #     print("[warning] Apex amp has been deprecated, please use pytorch amp instead!")
 

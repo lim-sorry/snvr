@@ -1,6 +1,10 @@
 from functools import partial
 from torch import optim as optim
-from .snvr import AdamWSNVR, SGDSNR
+
+try:
+    from .snvr import AdamWSNVR, SGDSNVR
+except:
+    from snvr import AdamWSNVR, SGDSNVR
 
 try:
     from apex.optimizers import FusedAdam, FusedLAMB
@@ -27,6 +31,11 @@ def build_optimizer(config, model):
     if opt_lower == 'sgd':
         optimizer = optim.SGD(parameters, momentum=config.TRAIN.OPTIMIZER.MOMENTUM, nesterov=True,
                               lr=config.TRAIN.BASE_LR, weight_decay=config.TRAIN.WEIGHT_DECAY)
+    elif opt_lower == 'sgdsnvr':
+        parameters = set_spectral_norm(parameters, separate=config.TRAIN.OPTIMIZER.SEPARATE, skip=config.TRAIN.OPTIMIZER.SKIP)
+        optimizer = SGDSNVR(parameters, momentum=config.TRAIN.OPTIMIZER.MOMENTUM, nesterov=True,
+                            lr=config.TRAIN.BASE_LR, weight_decay=config.TRAIN.WEIGHT_DECAY,
+                            snvr=config.TRAIN.OPTIMIZER.SNVR, decouple=config.TRAIN.OPTIMIZER.DECOUPLE)
     elif opt_lower == 'adamw':
         optimizer = optim.AdamW(parameters, eps=config.TRAIN.OPTIMIZER.EPS, betas=config.TRAIN.OPTIMIZER.BETAS,
                                 lr=config.TRAIN.BASE_LR, weight_decay=config.TRAIN.WEIGHT_DECAY)
@@ -206,7 +215,7 @@ if __name__ == "__main__":
     if hasattr(model, 'no_weight_decay_keywords'):
         skip_keywords = model.no_weight_decay_keywords()
     parameters = set_weight_decay(model, skip, skip_keywords)
-    parameters = set_spectral_norm(parameters, separate=False, skip=False)
+    parameters = set_spectral_norm(parameters, separate=False, skip=True)
 
     optimizer = AdamWSNVR(parameters, lr=1.0, weight_decay=0.5)
     print(optimizer)

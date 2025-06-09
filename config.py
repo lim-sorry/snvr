@@ -61,8 +61,6 @@ _C.MODEL.LABEL_SMOOTHING = 0.1
 # model specific parameters
 _C.MODEL.ESWIN = CN()
 _C.MODEL.ESWIN.PATCH_SIZE = 1
-_C.MODEL.ESWIN.IN_CHANS = 3
-_C.MODEL.ESWIN.NUM_CLASSES = 100
 _C.MODEL.ESWIN.EMBED_DIM = 96
 _C.MODEL.ESWIN.DEPTHS = [2, 2, 4, 2]
 _C.MODEL.ESWIN.NUM_HEADS = [3, 6, 12, 24]
@@ -250,6 +248,8 @@ def update_config(config, args):
         config.EVAL_MODE = True
     if _check_args('throughput'):
         config.THROUGHPUT_MODE = True
+    if _check_args('seed'):
+        config.SEED = args.seed
 
     # for acceleration
     if _check_args('fused_window_process'):
