@@ -56,16 +56,16 @@ _C.MODEL.DROP_RATE = 0.0
 # Drop path rate
 _C.MODEL.DROP_PATH_RATE = 0.1
 # Label Smoothing
-_C.MODEL.LABEL_SMOOTHING = 0.1
+_C.MODEL.LABEL_SMOOTHING = 0.0
 
 # model specific parameters
 _C.MODEL.ESWIN = CN()
-_C.MODEL.ESWIN.PATCH_SIZE = 1
-_C.MODEL.ESWIN.EMBED_DIM = 96
-_C.MODEL.ESWIN.DEPTHS = [2, 2, 4, 2]
-_C.MODEL.ESWIN.NUM_HEADS = [3, 6, 12, 24]
-_C.MODEL.ESWIN.WINDOW_SIZE = 4
-_C.MODEL.ESWIN.MLP_RATIO = 2.0
+_C.MODEL.ESWIN.PATCH_SIZE = None
+_C.MODEL.ESWIN.EMBED_DIM = None
+_C.MODEL.ESWIN.DEPTHS = None
+_C.MODEL.ESWIN.NUM_HEADS = None
+_C.MODEL.ESWIN.WINDOW_SIZE = None
+_C.MODEL.ESWIN.MLP_RATIO = None
 
 
 # -----------------------------------------------------------------------------
@@ -146,7 +146,7 @@ _C.AUG.MIXUP_SWITCH_PROB = 0.5
 # How to apply mixup/cutmix params. Per "batch", "pair", or "elem"
 _C.AUG.MIXUP_MODE = 'batch'
 # Whether to use RandAugment
-_C.AUG.RANDOM_AUGMENT = True
+_C.AUG.RANDOM_AUGMENT = False
 
 # -----------------------------------------------------------------------------
 # Testing settings

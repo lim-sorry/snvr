@@ -85,6 +85,8 @@ def parse_option():
 
 def main(config):
     dataset_train, dataset_val, data_loader_train, data_loader_val, mixup_fn = build_loader(config)
+    logger.info(f'train dataset transform: {dataset_train.transform}')
+    logger.info(f'valid dataset transform: {dataset_val.transform}')
 
     logger.info(f"Creating model:{config.MODEL.TYPE}/{config.MODEL.NAME}")
     model = build_model(config)

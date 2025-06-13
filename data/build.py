@@ -10,36 +10,42 @@ from timm.data import create_transform
 from .cached_image_folder import CachedImageFolder
 from .samplers import SubsetRandomSampler
 
-# try:
-#     from torchvision.transforms import InterpolationMode
+try:
+    from torchvision.transforms import InterpolationMode
 
 
-#     def _pil_interp(method):
-#         if method == 'bicubic':
-#             return InterpolationMode.BICUBIC
-#         elif method == 'lanczos':
-#             return InterpolationMode.LANCZOS
-#         elif method == 'hamming':
-#             return InterpolationMode.HAMMING
-#         else:
-#             # default bilinear, do we want to allow nearest?
-#             return InterpolationMode.BILINEAR
+    def _pil_interp(method):
+        if method == 'bicubic':
+            return InterpolationMode.BICUBIC
+        elif method == 'lanczos':
+            return InterpolationMode.LANCZOS
+        elif method == 'hamming':
+            return InterpolationMode.HAMMING
+        else:
+            # default bilinear, do we want to allow nearest?
+            return InterpolationMode.BILINEAR
 
 
-#     import timm.data.transforms as timm_transforms
+    import timm.data.transforms as timm_transforms
 
-#     timm_transforms._pil_interp = _pil_interp
-# except:
-from timm.data.transforms import _pil_interp
+    timm_transforms._pil_interp = _pil_interp
+    timm_transforms._pil_interpolation_to_str = {
+        InterpolationMode.BILINEAR: 'BILINEAR',
+        InterpolationMode.BICUBIC: 'BICUBIC',
+        InterpolationMode.LANCZOS: 'LANCZOS',
+        InterpolationMode.HAMMING: 'HAMMING',
+    }
+except:
+    from timm.data.transforms import _pil_interp
 
 
 def build_loader(config):
     config.defrost()
     dataset_train, config.MODEL.NUM_CLASSES = build_dataset(is_train=True, config=config)
     config.freeze()
-    print(f"local rank {config.LOCAL_RANK} / global rank {dist.get_rank()} successfully build train dataset")
+    print(f'training dataset: {len(dataset_train)} images')
     dataset_val, _ = build_dataset(is_train=False, config=config)
-    print(f"local rank {config.LOCAL_RANK} / global rank {dist.get_rank()} successfully build val dataset")
+    print(f'validation dataset: {len(dataset_val)} images')
 
     num_tasks = dist.get_world_size()
     global_rank = dist.get_rank()
@@ -96,8 +102,12 @@ def build_dataset(is_train, config):
     elif config.DATA.DATASET == 'cifar100':
         dataset = datasets.CIFAR100(root=dataset_path, train=is_train, download=True, transform=transform)
         nb_classes = 100
-    elif config.DATA.DATASET == 'tiny-imagenet':
-        print(transform)
+    elif config.DATA.DATASET == 'tiny-imagenet-200':
+        dataset = datasets.ImageFolder(
+            root=os.path.join(dataset_path, 'train_preprocess' if is_train else 'valid_preprocess'),
+            transform=transform
+        )
+        nb_classes = 200
     else:
         raise NotImplementedError("We only support ImageNet Now.")
 
@@ -105,10 +115,8 @@ def build_dataset(is_train, config):
 
 
 def build_transform(is_train, config):
-    random_augment = config.AUG.RANDOM_AUGMENT
-    resize_im = config.DATA.IMG_SIZE > 32
     if is_train:
-        if random_augment:
+        if config.AUG.RANDOM_AUGMENT == True:
             transform = create_transform(
                 input_size=config.DATA.IMG_SIZE,
                 is_training=True,
@@ -119,33 +127,23 @@ def build_transform(is_train, config):
                 re_count=config.AUG.RECOUNT,
                 interpolation=config.DATA.INTERPOLATION,
             )
-            if not resize_im:
-                transform.transforms[0] = transforms.RandomCrop(config.DATA.IMG_SIZE, padding=4)
         else:
             transform = transforms.Compose([
-                transforms.RandomCrop(config.DATA.IMG_SIZE, padding=4),
+                transforms.RandomCrop(config.DATA.IMG_SIZE),
                 transforms.RandomHorizontalFlip(),
                 transforms.ToTensor(),
                 transforms.Normalize(IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD),
             ])
-        
+        if config.DATA.IMG_SIZE == 32:
+            transform.transforms[0] = transforms.RandomCrop(config.DATA.IMG_SIZE, padding=4)
+        if config.DATA.IMG_SIZE == 64:
+            transform.transforms[0] = transforms.RandomCrop(config.DATA.IMG_SIZE, padding=8)
         return transform
 
     t = []
-    if resize_im:
-        if config.TEST.CROP:
-            size = int((256 / 224) * config.DATA.IMG_SIZE)
-            t.append(
-                transforms.Resize(size, interpolation=_pil_interp(config.DATA.INTERPOLATION)),
-                # to maintain same ratio w.r.t. 224 images
-            )
-            t.append(transforms.CenterCrop(config.DATA.IMG_SIZE))
-        else:
-            t.append(
-                transforms.Resize((config.DATA.IMG_SIZE, config.DATA.IMG_SIZE),
-                                  interpolation=_pil_interp(config.DATA.INTERPOLATION))
-            )
-
+    if config.DATA.IMG_SIZE == 224:
+        t.append(transforms.Resize(256, interpolation=_pil_interp(config.DATA.INTERPOLATION)))
+        t.append(transforms.CenterCrop(config.DATA.IMG_SIZE))
     t.append(transforms.ToTensor())
     t.append(transforms.Normalize(IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD))
     return transforms.Compose(t)

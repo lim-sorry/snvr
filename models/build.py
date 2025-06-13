@@ -22,14 +22,12 @@ def build_model(config):
     if model_type == 'resnet':
         if config.MODEL.TYPE == 'resnet18':
             model = models.resnet18(pretrained=False, num_classes=num_classes)
-            if img_size != 224:
-                model.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
-                model.maxpool = nn.Identity()  # remove maxpool for smaller input sizes
         elif config.MODEL.TYPE == 'resnet34':
             model = models.resnet34(pretrained=False, num_classes=num_classes)
-            if img_size != 224:
-                model.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
-                model.maxpool = nn.Identity()
+
+        if img_size != 224:
+            model.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
+            model.maxpool = nn.Identity()
 
     elif model_type == 'eswin':
         model = ESwinTransformer(

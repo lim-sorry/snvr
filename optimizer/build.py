@@ -29,11 +29,11 @@ def build_optimizer(config, model):
     opt_lower = config.TRAIN.OPTIMIZER.NAME.lower()
     optimizer = None
     if opt_lower == 'sgd':
-        optimizer = optim.SGD(parameters, momentum=config.TRAIN.OPTIMIZER.MOMENTUM, nesterov=True,
+        optimizer = optim.SGD(parameters, momentum=config.TRAIN.OPTIMIZER.MOMENTUM,
                               lr=config.TRAIN.BASE_LR, weight_decay=config.TRAIN.WEIGHT_DECAY)
     elif opt_lower == 'sgdsnvr':
         parameters = set_spectral_norm(parameters, separate=config.TRAIN.OPTIMIZER.SEPARATE, skip=config.TRAIN.OPTIMIZER.SKIP)
-        optimizer = SGDSNVR(parameters, momentum=config.TRAIN.OPTIMIZER.MOMENTUM, nesterov=True,
+        optimizer = SGDSNVR(parameters, momentum=config.TRAIN.OPTIMIZER.MOMENTUM,
                             lr=config.TRAIN.BASE_LR, weight_decay=config.TRAIN.WEIGHT_DECAY,
                             snvr=config.TRAIN.OPTIMIZER.SNVR, decouple=config.TRAIN.OPTIMIZER.DECOUPLE)
     elif opt_lower == 'adamw':
