@@ -400,7 +400,7 @@ class BasicLayer(nn.Module):
 
 class Convolutional_block(nn.Module):
 
-    def __init__(self, embed_dim=96):
+    def __init__(self, embed_dim=96, patch_size=1):
         super().__init__()
         self.b1 = nn.Sequential(nn.BatchNorm2d(3),
                                 nn.Conv2d(3, 6, 3, 1, 1))
@@ -412,7 +412,7 @@ class Convolutional_block(nn.Module):
                       nn.Conv2d(24, 48, 3, 1, 1))
         self.b5 = nn.Sequential(nn.BatchNorm2d(48),
                                 nn.Conv2d(48, 96, 3, 1, 1))
-        self.b6 = nn.Conv2d(96, embed_dim, 1)
+        self.b6 = nn.Conv2d(96, embed_dim, patch_size, stride=patch_size)
     def forward(self, x):
         x = F.relu(self.b1(x))
         x = F.relu(self.b2(x))
@@ -440,7 +440,7 @@ class PatchEmbed(nn.Module):
         self.in_chans = in_chans
         self.embed_dim = embed_dim
 
-        self.proj = Convolutional_block(embed_dim)
+        self.proj = Convolutional_block(embed_dim, patch_size)
         if norm_layer is not None:
             self.norm = norm_layer(embed_dim)
         else:

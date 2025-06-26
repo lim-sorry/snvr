@@ -103,7 +103,7 @@ class SGDSNVR(Optimizer):
                     sn = param.sn
                     uv = param.uv
                     snr_grad_base = torch.reshape(sn * uv, param.shape)
-                    snvr_grad_base = torch.reshape((sn.item() - sn_mean) * uv * (len(params_with_grad) - 1) / len(params_with_grad), param.shape)
+                    snvr_grad_base = torch.reshape((sn.item() - sn_mean) * uv, param.shape)
 
                     if decouple:
                         param.add_(snr_grad_base, alpha=(-lr * snvr[0]))
@@ -153,7 +153,6 @@ class AdamWSNVR(Optimizer):
             eps = group['eps']
             snvr = group['snvr']
             decouple = group['decouple']
-
 
             for p in group['params']:
                 if p.grad is not None:
@@ -206,7 +205,7 @@ class AdamWSNVR(Optimizer):
                     uv = param.uv
 
                     snr_grad_base = torch.reshape(torch.mul(sn, uv), param.shape)
-                    snvr_grad_base = torch.reshape(torch.mul(sn.item() - sn_mean, uv) * (n_params - 1) / n_params, param.shape)
+                    snvr_grad_base = torch.reshape((sn.item() - sn_mean) * uv, param.shape)
 
                     if decouple:
                         param.add_(snr_grad_base, alpha=(-lr * snvr[0]))

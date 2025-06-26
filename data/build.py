@@ -6,6 +6,7 @@ from torchvision import datasets, transforms
 from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
 from timm.data import Mixup
 from timm.data import create_transform
+from timm.models.layers import to_2tuple
 
 from .cached_image_folder import CachedImageFolder
 from .samplers import SubsetRandomSampler
@@ -102,12 +103,23 @@ def build_dataset(is_train, config):
     elif config.DATA.DATASET == 'cifar100':
         dataset = datasets.CIFAR100(root=dataset_path, train=is_train, download=True, transform=transform)
         nb_classes = 100
-    elif config.DATA.DATASET == 'tiny-imagenet-200':
+    elif config.DATA.DATASET == 'tiny-imagenet':
         dataset = datasets.ImageFolder(
             root=os.path.join(dataset_path, 'train_preprocess' if is_train else 'valid_preprocess'),
             transform=transform
         )
         nb_classes = 200
+    elif config.DATA.DATASET == 'stl10':
+        dataset = datasets.STL10(
+            root=dataset_path, split='train' if is_train else 'test', download=True, transform=transform
+        )
+        nb_classes = 10
+    elif config.DATA.DATASET == 'food101':
+        dataset = datasets.ImageFolder(
+            root=os.path.join(dataset_path, 'train' if is_train else 'test'),
+            transform=transform
+        )
+        nb_classes = 101
     else:
         raise NotImplementedError("We only support ImageNet Now.")
 
@@ -127,22 +139,22 @@ def build_transform(is_train, config):
                 re_count=config.AUG.RECOUNT,
                 interpolation=config.DATA.INTERPOLATION,
             )
+            transform.transforms[0] = transforms.RandomCrop(config.DATA.IMG_SIZE, padding=config.DATA.IMG_SIZE // 8)
         else:
             transform = transforms.Compose([
-                transforms.RandomCrop(config.DATA.IMG_SIZE),
+                transforms.RandomCrop(config.DATA.IMG_SIZE, padding=config.DATA.IMG_SIZE // 8),
                 transforms.RandomHorizontalFlip(),
                 transforms.ToTensor(),
                 transforms.Normalize(IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD),
             ])
-        if config.DATA.IMG_SIZE == 32:
-            transform.transforms[0] = transforms.RandomCrop(config.DATA.IMG_SIZE, padding=4)
-        if config.DATA.IMG_SIZE == 64:
-            transform.transforms[0] = transforms.RandomCrop(config.DATA.IMG_SIZE, padding=8)
+        if config.DATA.IMG_SIZE == 128:
+            transform.transforms[0] = transforms.Resize(144, interpolation=_pil_interp(config.DATA.INTERPOLATION))
+            transform.transforms.insert(1, transforms.RandomCrop(config.DATA.IMG_SIZE))
         return transform
 
     t = []
-    if config.DATA.IMG_SIZE == 224:
-        t.append(transforms.Resize(256, interpolation=_pil_interp(config.DATA.INTERPOLATION)))
+    if config.DATA.IMG_SIZE == 128:
+        t.append(transforms.Resize(144, interpolation=_pil_interp(config.DATA.INTERPOLATION)))
         t.append(transforms.CenterCrop(config.DATA.IMG_SIZE))
     t.append(transforms.ToTensor())
     t.append(transforms.Normalize(IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD))

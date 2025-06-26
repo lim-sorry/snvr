@@ -1,4 +1,5 @@
 from .eswin_transformer import ESwinTransformer
+from .conv2next import conv2next_tiny
 from torchvision import models
 
 def build_model(config):
@@ -28,8 +29,7 @@ def build_model(config):
         if img_size != 224:
             model.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
             model.maxpool = nn.Identity()
-
-    elif model_type == 'eswin':
+    elif model_type == 'eswin-tiny':
         model = ESwinTransformer(
             img_size=img_size,
             patch_size=config.MODEL.ESWIN.PATCH_SIZE,
@@ -41,6 +41,8 @@ def build_model(config):
             mlp_ratio=config.MODEL.ESWIN.MLP_RATIO,
             norm_layer=layernorm,
             )
+    elif model_type == 'conv2next-tiny':
+        model = conv2next_tiny(num_classes=num_classes)
     else:
         raise NotImplementedError(f"Unkown model: {model_type}")
 

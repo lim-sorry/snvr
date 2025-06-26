@@ -33,7 +33,7 @@ _C.DATA.CACHE_MODE = 'part'
 # Pin CPU memory in DataLoader for more efficient (sometimes) transfer to GPU.
 _C.DATA.PIN_MEMORY = True
 # Number of data loading threads
-_C.DATA.NUM_WORKERS = 4
+_C.DATA.NUM_WORKERS = 6
 
 
 # -----------------------------------------------------------------------------
@@ -114,10 +114,10 @@ _C.TRAIN.OPTIMIZER.BETAS = (0.9, 0.999)
 _C.TRAIN.OPTIMIZER.MOMENTUM = 0.9
 
 # SNVR
-_C.TRAIN.OPTIMIZER.SNVR = (0.001, 1.0)
-_C.TRAIN.OPTIMIZER.DECOUPLE = True
-_C.TRAIN.OPTIMIZER.SEPARATE = True
-_C.TRAIN.OPTIMIZER.SKIP = True
+_C.TRAIN.OPTIMIZER.SNVR = (0.0, 0.0)
+_C.TRAIN.OPTIMIZER.DECOUPLE = None
+_C.TRAIN.OPTIMIZER.SEPARATE = None
+_C.TRAIN.OPTIMIZER.SKIP = None
 
 # -----------------------------------------------------------------------------
 # Augmentation settings
@@ -175,7 +175,7 @@ _C.TAG = 'default'
 # Frequency to save checkpoint
 _C.SAVE_FREQ = 200
 # Frequency to logging info
-_C.PRINT_FREQ = 25
+_C.PRINT_FREQ = 50
 # Fixed random seed
 _C.SEED = 0
 # Perform evaluation only, overwritten by command line argument
@@ -267,7 +267,7 @@ def update_config(config, args):
         config.LOCAL_RANK = int(os.environ['LOCAL_RANK'])
 
     # output folder
-    config.OUTPUT = os.path.join(config.OUTPUT, config.MODEL.NAME, config.TAG)
+    config.OUTPUT = os.path.join(config.OUTPUT, config.MODEL.TYPE, config.DATA.DATASET, config.MODEL.NAME, config.TAG)
 
     config.freeze()
 

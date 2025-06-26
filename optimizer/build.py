@@ -170,7 +170,8 @@ def set_spectral_norm(parameters, separate=True, skip=True):
 
         if skip:
             assert len(group['params']) >= 2, "Parameter group must have at least two parameters to skip"
-            group_skip = {'params':[group['params'][0],group['params'][-1]], 'snvr': (0.0, 0.0)}
+            group_skip = {'params':[group['params'][0],group['params'][-1]]}
+            group_skip['snvr'] = (0.0, 0.0)
             parameters_sn.append(group_skip)
             group['params'] = group['params'][1:-1]
 
@@ -199,10 +200,11 @@ if __name__ == "__main__":
 
     model = nn.Sequential(
         nn.Conv2d(3, 16, kernel_size=3, stride=1, padding=1),
-        nn.Conv2d(16, 32, kernel_size=3, stride=1, padding=1),
-        nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),
+        nn.Conv2d(16, 16, kernel_size=3, stride=1, padding=1),
+        nn.Conv2d(16, 16, kernel_size=3, stride=1, padding=1),
+        nn.Conv2d(16, 16, kernel_size=3, stride=1, padding=1),
         nn.Flatten(),
-        nn.Linear(64 * 32 * 32, 128),
+        nn.Linear(16 * 32 * 32, 128),
         nn.Linear(128, 10),
         nn.Linear(10, 2),
 
@@ -215,9 +217,9 @@ if __name__ == "__main__":
     if hasattr(model, 'no_weight_decay_keywords'):
         skip_keywords = model.no_weight_decay_keywords()
     parameters = set_weight_decay(model, skip, skip_keywords)
-    parameters = set_spectral_norm(parameters, separate=False, skip=True)
+    parameters = set_spectral_norm(parameters, separate=True, skip=True)
 
-    optimizer = AdamWSNVR(parameters, lr=1.0, weight_decay=0.5)
+    optimizer = AdamWSNVR(parameters, lr=1.0, weight_decay=0.5, snvr=(1.0, 2.0))
     print(optimizer)
     for group in optimizer.param_groups:
         print("Number of parameter groups:", len(group['params']))
