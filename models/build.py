@@ -25,7 +25,7 @@ def build_model(config):
         model = models.resnet18(pretrained=False, num_classes=num_classes)
         model.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
         model.maxpool = nn.Identity()
-    if model_type == 'resnet34':
+    elif model_type == 'resnet34':
         model = models.resnet34(pretrained=False, num_classes=num_classes)
         model.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
         model.maxpool = nn.Identity()

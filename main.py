@@ -20,8 +20,9 @@ from data import build_loader
 from models import build_model
 from optimizer import build_optimizer
 from lr_scheduler import build_scheduler
-from utils import load_checkpoint, load_pretrained, save_checkpoint, NativeScalerWithGradNormCount, auto_resume_helper, \
-    reduce_tensor
+from utils import load_checkpoint, load_pretrained, save_checkpoint, NativeScalerWithGradNormCount, auto_resume_helper, reduce_tensor
+
+from optimizer.tb import Tempbalance, cosine_decay
 
 
 # pytorch major version (1.x or 2.x)
@@ -106,8 +107,8 @@ def main(config):
     model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[config.LOCAL_RANK], broadcast_buffers=False)
     loss_scaler = NativeScalerWithGradNormCount()
 
-    if config.TRAIN.ACCUMULATION_STEPS > 1:
-        lr_scheduler = build_scheduler(config, optimizer, len(data_loader_train) // config.TRAIN.ACCUMULATION_STEPS)
+    if config.MODEL.NAME == 'tb':
+        lr_scheduler = Tempbalance(model)
     else:
         lr_scheduler = build_scheduler(config, optimizer, len(data_loader_train))
 
@@ -203,16 +204,18 @@ def train_one_epoch(config, model, criterion, data_loader, optimizer, epoch, mix
         with torch.cuda.amp.autocast(enabled=config.AMP_ENABLE):
             outputs = model(samples)
         loss = criterion(outputs, targets)
-        loss = loss / config.TRAIN.ACCUMULATION_STEPS
 
         # this attribute is added by timm on one optimizer (adahessian)
         is_second_order = hasattr(optimizer, 'is_second_order') and optimizer.is_second_order
         grad_norm = loss_scaler(loss, optimizer, clip_grad=config.TRAIN.CLIP_GRAD,
                                 parameters=model.parameters(), create_graph=is_second_order,
-                                update_grad=(idx + 1) % config.TRAIN.ACCUMULATION_STEPS == 0)
-        if (idx + 1) % config.TRAIN.ACCUMULATION_STEPS == 0:
-            optimizer.zero_grad()
-            lr_scheduler.step_update((epoch * num_steps + idx) // config.TRAIN.ACCUMULATION_STEPS)
+                                update_grad=True)
+        optimizer.zero_grad()
+        if config.MODEL.NAME == 'tb':
+            untuned_lr = cosine_decay(config.TRAIN.BASE_LR, epoch * num_steps + idx, (config.TRAIN.EPOCHS - config.TRAIN.WARMUP_EPOCHS) * num_steps)
+            lr_scheduler.step(optimizer, untuned_lr)
+        else:
+            lr_scheduler.step_update(epoch * num_steps + idx)
         loss_scale_value = loss_scaler.state_dict()["scale"]
 
         torch.cuda.synchronize()

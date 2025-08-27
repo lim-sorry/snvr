@@ -131,7 +131,7 @@ def load_pretrained(config, model, logger):
 def save_checkpoint(config, epoch, model, acc1, acc5, optimizer, lr_scheduler, loss_scaler, logger, is_best=False):
     save_state = {'model': model.state_dict(),
                   'optimizer': optimizer.state_dict(),
-                  'lr_scheduler': lr_scheduler.state_dict(),
+                  'lr_scheduler': lr_scheduler.state_dict() if config.MODEL.NAME != 'tb' else None,
                   'accuracy1': acc1,
                   'accuracy5': acc5,
                   'scaler': loss_scaler.state_dict(),
