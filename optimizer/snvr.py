@@ -27,7 +27,7 @@ def calc_sn_uv(weight, n_power=5, eps=1e-12):
 
 class SGDSNVR(Optimizer):
     def __init__(self, params, lr=1e-3, momentum=0.9, dampening=0.0, weight_decay=0.0005,
-                 nesterov=False, snvr=(0.0, 0.0), decouple=True):
+                 nesterov=False, snvr=(0.0, 0.0), decouple=False):
         if lr < 0.0:
             raise ValueError("Invalid learning rate: {}".format(lr))
         if momentum < 0.0:

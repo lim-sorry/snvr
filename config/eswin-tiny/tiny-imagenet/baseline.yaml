@@ -7,17 +7,13 @@ AUG:
   CUTMIX: 0.5
   RANDOM_AUGMENT: TRUE
 MODEL:
-  TYPE: eswin
-  NAME: baseline_5e-4
+  TYPE: eswin-tiny
+  NAME: baseline
   NUM_CLASSES: 200
   LABEL_SMOOTHING: 0.1
   ESWIN:
     PATCH_SIZE: 2
-    EMBED_DIM: 96
-    DEPTHS: [2,2,4,2]
-    NUM_HEADS: [3,6,12,24]
     WINDOW_SIZE: 4
-    MLP_RATIO: 2.0
 TRAIN:
   OPTIMIZER:
     NAME: adamw

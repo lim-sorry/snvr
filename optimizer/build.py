@@ -44,12 +44,6 @@ def build_optimizer(config, model):
         optimizer = AdamWSNVR(parameters, eps=config.TRAIN.OPTIMIZER.EPS, betas=config.TRAIN.OPTIMIZER.BETAS,
                              lr=config.TRAIN.BASE_LR, weight_decay=config.TRAIN.WEIGHT_DECAY,
                              snvr=config.TRAIN.OPTIMIZER.SNVR, decouple=config.TRAIN.OPTIMIZER.DECOUPLE)
-    elif opt_lower == 'fused_adam':
-        optimizer = FusedAdam(parameters, eps=config.TRAIN.OPTIMIZER.EPS, betas=config.TRAIN.OPTIMIZER.BETAS,
-                              lr=config.TRAIN.BASE_LR, weight_decay=config.TRAIN.WEIGHT_DECAY)
-    elif opt_lower == 'fused_lamb':
-        optimizer = FusedLAMB(parameters, eps=config.TRAIN.OPTIMIZER.EPS, betas=config.TRAIN.OPTIMIZER.BETAS,
-                              lr=config.TRAIN.BASE_LR, weight_decay=config.TRAIN.WEIGHT_DECAY)
 
     return optimizer
 
