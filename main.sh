@@ -1,12 +1,12 @@
 
-for i in {0..4}
+for i in {0..0}
 do
     python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/food101/baseline.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
-    python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/food101/wn.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
-    python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/food101/sn.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
-    python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/food101/tb.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
-    python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/food101/snr.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
-    python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/food101/snvr.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
+    # python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/food101/wn.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
+    # python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/food101/sn.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
+    # python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/food101/tb.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
+    # python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/food101/snr.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
+    # python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/food101/snvr.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
 
 done
 
