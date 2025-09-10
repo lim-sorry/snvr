@@ -37,7 +37,7 @@ def build_model(config):
             embed_dim=96,
             depths=[2,2,4,2],
             num_heads=[3,6,12,24],
-            window_size=config.MODEL.ESWIN.WINDOW_SIZE,
+            window_size=4,
             mlp_ratio=2,
             norm_layer=layernorm,
             )
@@ -49,7 +49,7 @@ def build_model(config):
             embed_dim=128,
             depths=[2,2,6,2],
             num_heads=[4,8,16,32],
-            window_size=config.MODEL.ESWIN.WINDOW_SIZE,
+            window_size=4,
             mlp_ratio=2,
             norm_layer=layernorm,
             )

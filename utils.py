@@ -21,7 +21,10 @@ def load_checkpoint(config, model, optimizer, lr_scheduler, loss_scaler, logger)
     accuracy5 = 0.0
     if not config.EVAL_MODE and 'optimizer' in checkpoint and 'lr_scheduler' in checkpoint and 'epoch' in checkpoint:
         optimizer.load_state_dict(checkpoint['optimizer'])
-        lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
+        try:
+            lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
+        except Exception as e:
+            logger.warning(f"Failed to load lr_scheduler state_dict: {e}")
         config.defrost()
         config.TRAIN.START_EPOCH = checkpoint['epoch'] + 1
         config.freeze()

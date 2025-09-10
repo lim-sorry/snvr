@@ -8,7 +8,7 @@ AUG:
   RANDOM_AUGMENT: TRUE
 MODEL:
   TYPE: conv2next-tiny
-  NAME: snvr_0.01_1.0
+  NAME: snvr
   NUM_CLASSES: 10
   LABEL_SMOOTHING: 0.1
 TRAIN:

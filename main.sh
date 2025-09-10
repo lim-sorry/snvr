@@ -1,18 +1,13 @@
-python -m torch.distributed.launch --use_env main.py --cfg config/resnet18/cifar100/tb.yaml --local_rank 0 --data-path ../data --tag 0 --seed 0
 
-for i in {0..0}
+for i in {0..4}
 do
-    # python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/food101/baseline.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
-    # python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/stl10/baseline.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
+    python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/food101/baseline.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
+    python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/food101/wn.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
+    python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/food101/sn.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
+    python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/food101/tb.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
+    python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/food101/snr.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
+    python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/food101/snvr.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
 
-    # python -m torch.distributed.launch --use_env main.py --cfg config/conv2next-tiny/food101/baseline.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
-    # python -m torch.distributed.launch --use_env main.py --cfg config/conv2next-tiny/stl10/baseline.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
-
-    # python -m torch.distributed.launch --use_env main.py --cfg config/resnet34/food101/baseline.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
-    # python -m torch.distributed.launch --use_env main.py --cfg config/resnet34/stl10/baseline.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
-
-    # python -m torch.distributed.launch --use_env main.py --cfg config/resnet18/food101/baseline.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
-    # python -m torch.distributed.launch --use_env main.py --cfg config/resnet18/stl10/baseline.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
 done
 
 for i in {0..0}

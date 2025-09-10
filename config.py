@@ -61,11 +61,6 @@ _C.MODEL.LABEL_SMOOTHING = 0.0
 # model specific parameters
 _C.MODEL.ESWIN = CN()
 _C.MODEL.ESWIN.PATCH_SIZE = None
-_C.MODEL.ESWIN.EMBED_DIM = None
-_C.MODEL.ESWIN.DEPTHS = None
-_C.MODEL.ESWIN.NUM_HEADS = None
-_C.MODEL.ESWIN.WINDOW_SIZE = None
-_C.MODEL.ESWIN.MLP_RATIO = None
 
 
 # -----------------------------------------------------------------------------

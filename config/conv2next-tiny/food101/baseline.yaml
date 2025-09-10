@@ -1,14 +1,14 @@
 DATA:
   DATASET: food101
   IMG_SIZE: 128
-  BATCH_SIZE: 32
+  BATCH_SIZE: 64
 AUG:
   MIXUP: 0.5
   CUTMIX: 0.5
   RANDOM_AUGMENT: TRUE
 MODEL:
   TYPE: conv2next-tiny
-  NAME: baseline_4e-3
+  NAME: baseline
   NUM_CLASSES: 101
   LABEL_SMOOTHING: 0.1
 TRAIN:
