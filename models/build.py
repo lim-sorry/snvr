@@ -41,22 +41,8 @@ def build_model(config):
             mlp_ratio=2,
             norm_layer=layernorm,
             )
-    elif model_type == 'eswin-base':
-        model = ESwinTransformer(
-            img_size=img_size,
-            patch_size=config.MODEL.ESWIN.PATCH_SIZE,
-            num_classes=num_classes,
-            embed_dim=128,
-            depths=[2,2,6,2],
-            num_heads=[4,8,16,32],
-            window_size=4,
-            mlp_ratio=2,
-            norm_layer=layernorm,
-            )
     elif model_type == 'conv2next-tiny':
         model = conv2next_tiny(num_classes=num_classes)
-    elif model_type == 'conv2next-base':
-        model = conv2next_base(num_classes=num_classes)
     else:
         raise NotImplementedError(f"Unkown model: {model_type}")
 

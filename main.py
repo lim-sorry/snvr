@@ -23,6 +23,7 @@ from lr_scheduler import build_scheduler
 from utils import load_checkpoint, load_pretrained, save_checkpoint, NativeScalerWithGradNormCount, auto_resume_helper, reduce_tensor
 
 from optimizer.tb import Tempbalance, cosine_decay
+from optimizer.htr import stable_rank, weight_alpha
 
 
 # pytorch major version (1.x or 2.x)
@@ -204,6 +205,11 @@ def train_one_epoch(config, model, criterion, data_loader, optimizer, epoch, mix
         with torch.cuda.amp.autocast(enabled=config.AMP_ENABLE):
             outputs = model(samples)
         loss = criterion(outputs, targets)
+        
+        if config.MODEL.NAME == 'war':
+            loss += 5e-5 * weight_alpha(model)
+        if config.MODEL.NAME == 'srr':
+            loss += 5e-4 * stable_rank(model)
 
         # this attribute is added by timm on one optimizer (adahessian)
         is_second_order = hasattr(optimizer, 'is_second_order') and optimizer.is_second_order
@@ -211,10 +217,7 @@ def train_one_epoch(config, model, criterion, data_loader, optimizer, epoch, mix
                                 parameters=model.parameters(), create_graph=is_second_order,
                                 update_grad=True)
         optimizer.zero_grad()
-        if config.MODEL.NAME == 'tb':
-            untuned_lr = cosine_decay(config.TRAIN.BASE_LR, epoch * num_steps + idx, (config.TRAIN.EPOCHS - config.TRAIN.WARMUP_EPOCHS) * num_steps)
-            lr_scheduler.step(optimizer, untuned_lr)
-        else:
+        if config.MODEL.NAME != 'tb':
             lr_scheduler.step_update(epoch * num_steps + idx)
         loss_scale_value = loss_scaler.state_dict()["scale"]
 
@@ -240,6 +243,11 @@ def train_one_epoch(config, model, criterion, data_loader, optimizer, epoch, mix
                 f'grad_norm {norm_meter.val:.4f} ({norm_meter.avg:.4f})\t'
                 f'loss_scale {scaler_meter.val:.4f} ({scaler_meter.avg:.4f})\t'
                 f'mem {memory_used:.0f}MB')
+
+    if config.MODEL.NAME == 'tb':
+        untuned_lr = cosine_decay(config.TRAIN.BASE_LR, epoch, config.TRAIN.EPOCHS - config.TRAIN.WARMUP_EPOCHS)
+        lr_scheduler.step(optimizer, untuned_lr)
+
     epoch_time = time.time() - start
     logger.info(f"EPOCH {epoch} training takes {datetime.timedelta(seconds=int(epoch_time))}")
 
