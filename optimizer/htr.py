@@ -7,11 +7,13 @@ def weight_alpha(model):
         if not isinstance(m, (nn.Conv2d, nn.Linear)):
             continue
         weight = m.weight
+        # if isinstance(m, nn.Conv2d):
+        #     weight = weight.flatten(start_dim=2)
+        #     weight = weight.transpose(1,2).transpose(0,1)
         if isinstance(m, nn.Conv2d):
-            weight = weight.flatten(start_dim=2)
-            weight = weight.transpose(1,2).transpose(0,1)
-        eigs = torch.linalg.eigvals(weight @ weight.transpose(-1,-2))
-        eigs = torch.sort(eigs.real.flatten())[0]
+            weight = weight.flatten(start_dim=1)
+        _U, S, _V = torch.pca_lowrank(weight, q=min(weight.shape[-2:]), center=False, niter=2)
+        eigs = torch.sort(S.pow(2).flatten())[0]
         max_eig = eigs[-1]
         n = len(eigs)
         k = n // 2
@@ -31,11 +33,13 @@ def stable_rank(model):
         if not isinstance(m, (nn.Conv2d, nn.Linear)):
             continue
         weight = m.weight
+        # if isinstance(m, nn.Conv2d):
+        #     weight = weight.flatten(start_dim=2)
+        #     weight = weight.transpose(1,2).transpose(0,1)
         if isinstance(m, nn.Conv2d):
-            weight = weight.flatten(start_dim=2)
-            weight = weight.transpose(1,2).transpose(0,1)
-        s = torch.linalg.svdvals(weight)
-        rank = (s**2).sum() / (s.max()**2 + 1e-6)
+            weight = weight.flatten(start_dim=1)
+        _U, S, _V = torch.pca_lowrank(weight, q=min(weight.shape[-2:]), center=False, niter=2)
+        rank = (S**2).sum() / (S.max()**2 + 1e-6)
         ranks.append(rank)
     return sum(ranks)
 

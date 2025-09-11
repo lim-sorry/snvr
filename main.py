@@ -206,9 +206,9 @@ def train_one_epoch(config, model, criterion, data_loader, optimizer, epoch, mix
             outputs = model(samples)
         loss = criterion(outputs, targets)
         
-        if config.MODEL.NAME == 'war':
+        if 'war' in config.MODEL.NAME:
             loss += 5e-5 * weight_alpha(model)
-        if config.MODEL.NAME == 'srr':
+        if 'srr' in config.MODEL.NAME:
             loss += 5e-4 * stable_rank(model)
 
         # this attribute is added by timm on one optimizer (adahessian)
