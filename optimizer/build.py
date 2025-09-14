@@ -7,6 +7,11 @@ except:
     from snvr import AdamWSNVR, SGDSNVR
 
 try:
+    from .lwsam import LWSAM, group_parameters_by_layer_type
+except:
+    from lwsam import LWSAM, group_parameters_by_layer_type
+
+try:
     from apex.optimizers import FusedAdam, FusedLAMB
 except:
     FusedAdam = None
@@ -44,6 +49,16 @@ def build_optimizer(config, model):
         optimizer = AdamWSNVR(parameters, eps=config.TRAIN.OPTIMIZER.EPS, betas=config.TRAIN.OPTIMIZER.BETAS,
                              lr=config.TRAIN.BASE_LR, weight_decay=config.TRAIN.WEIGHT_DECAY,
                              snvr=config.TRAIN.OPTIMIZER.SNVR, decouple=config.TRAIN.OPTIMIZER.DECOUPLE)
+    elif 'lwsam' in opt_lower:
+        parameters = group_parameters_by_layer_type(model)
+        if 'sgd' in opt_lower:
+            base_optimizer = optim.SGD
+            optimizer = LWSAM(parameters, base_optimizer=base_optimizer, momentum=config.TRAIN.OPTIMIZER.MOMENTUM,
+                             lr=config.TRAIN.BASE_LR, weight_decay=config.TRAIN.WEIGHT_DECAY)
+        elif 'adamw' in opt_lower:
+            base_optimizer = optim.AdamW
+            optimizer = LWSAM(parameters, base_optimizer=base_optimizer, eps=config.TRAIN.OPTIMIZER.EPS, betas=config.TRAIN.OPTIMIZER.BETAS,
+                             lr=config.TRAIN.BASE_LR, weight_decay=config.TRAIN.WEIGHT_DECAY)
 
     return optimizer
 

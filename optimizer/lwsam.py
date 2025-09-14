@@ -25,8 +25,9 @@ class LWSAM(torch.optim.Optimizer):
         defaults = dict(rho=rho, k=k, adaptive=adaptive, **kwargs)
         super(LWSAM, self).__init__(params, defaults)
 
+        self.param_groups[-1]['weight_decay'] = 0.0
         self.base_optimizer = base_optimizer(self.param_groups, **kwargs)
-        self.param_groups = self.base_optimizer.param_groups
+        self.param_groups = self.param_groups[:-1]
         self.defaults.update(self.base_optimizer.defaults)
         
         for group in self.param_groups:
@@ -105,20 +106,18 @@ class LWSAM(torch.optim.Optimizer):
 
 def group_parameters_by_layer_type(model: nn.Module, trigger_layers=(nn.Conv1d, nn.Conv2d, nn.Linear)):
     param_groups = []
-    current_group = []
+    no_weight_decay = []
 
     for module in model.modules():
-        if list(module.parameters(recurse=False)):
-            if isinstance(module, trigger_layers):
-                if current_group:
-                    param_groups.append({'params': current_group})
-                current_group = list(module.parameters(recurse=False))
-            else:
-                current_group.extend(list(module.parameters(recurse=False)))
+        if not module.parameters(recurse=False):
+            continue
+        if isinstance(module, trigger_layers):
+            print(f"Group created for layer: {module.__class__.__name__}")
+            param_groups.append({'params': list(module.parameters(recurse=False))})
+        else:
+            no_weight_decay.extend(list(module.parameters(recurse=False)))
+    param_groups.append({'params': no_weight_decay, 'weight_decay': 0.0})
 
-    if current_group:
-        param_groups.append({'params': current_group})
-        
     print(f"Model has been divided into {len(param_groups)} parameter groups.")
     return param_groups
 

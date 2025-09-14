@@ -213,9 +213,18 @@ def train_one_epoch(config, model, criterion, data_loader, optimizer, epoch, mix
 
         # this attribute is added by timm on one optimizer (adahessian)
         is_second_order = hasattr(optimizer, 'is_second_order') and optimizer.is_second_order
-        grad_norm = loss_scaler(loss, optimizer, clip_grad=config.TRAIN.CLIP_GRAD,
-                                parameters=model.parameters(), create_graph=is_second_order,
-                                update_grad=True)
+        if 'lwsam' in config.MODEL.NAME:
+            def closure():
+                outputs = model(samples)
+                loss = criterion(outputs, targets)
+                loss.backward()
+                return loss
+            optimizer.step(closure)
+            grad_norm = None
+        else:
+            grad_norm = loss_scaler(loss, optimizer, clip_grad=config.TRAIN.CLIP_GRAD,
+                                    parameters=model.parameters(), create_graph=is_second_order,
+                                    update_grad=True)
         optimizer.zero_grad()
         if config.MODEL.NAME != 'tb':
             lr_scheduler.step_update(epoch * num_steps + idx)

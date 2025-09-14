@@ -11,7 +11,7 @@ MODEL:
   LABEL_SMOOTHING: 0.0
 TRAIN:
   OPTIMIZER:
-    NAME: sgwar_snvr
+    NAME: sgdsnvr
     SNVR: [0.01, 1.0]
     DECOUPLE: FALSE
     SEPARATE: TRUE
