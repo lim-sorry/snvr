@@ -207,9 +207,9 @@ def train_one_epoch(config, model, criterion, data_loader, optimizer, epoch, mix
         loss = criterion(outputs, targets)
         
         if 'war' in config.MODEL.NAME:
-            loss += 5e-5 * weight_alpha(model)
+            loss += 1e-5 * weight_alpha(model)
         if 'srr' in config.MODEL.NAME:
-            loss += 5e-4 * stable_rank(model)
+            loss += 1e-4 * stable_rank(model)
 
         # this attribute is added by timm on one optimizer (adahessian)
         is_second_order = hasattr(optimizer, 'is_second_order') and optimizer.is_second_order

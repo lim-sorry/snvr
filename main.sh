@@ -1,13 +1,12 @@
 
 for i in {0..4}
 do
-    python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/tiny-imagenet/baseline.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
-    python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/tiny-imagenet/snr.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
-    python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/tiny-imagenet/snvr.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
-    python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/tiny-imagenet/snvr_unify.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
-    python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/tiny-imagenet/wn.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
-    python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/tiny-imagenet/sn.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
-    python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/tiny-imagenet/tb.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
+    python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/food101/baseline.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
+    python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/food101/snr.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
+    python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/food101/snvr.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
+    python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/food101/wn.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
+    python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/food101/sn.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
+    python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/food101/tb.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
 
 done
 

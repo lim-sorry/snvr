@@ -2,9 +2,8 @@ name: snvr
 channels:
   - pytorch
   - defaults
+  - nvidia
   - conda-forge
-  - https://repo.anaconda.com/pkgs/main
-  - https://repo.anaconda.com/pkgs/r
 dependencies:
   - _libgcc_mutex=0.1=main
   - _openmp_mutex=5.1=1_gnu
@@ -134,3 +133,4 @@ dependencies:
       - urllib3==2.0.7
       - wheel==0.42.0
       - yacs==0.1.8
+prefix: /venv/snvr
