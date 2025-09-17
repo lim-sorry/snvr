@@ -1,12 +1,19 @@
+python -m torch.distributed.launch --use_env grad_norm_trace.py --cfg config/resnet34/cifar100/baseline.yaml --local_rank 0 --data-path ../data --tag 0 --seed 0
+python -m torch.distributed.launch --use_env grad_norm_trace.py --cfg config/resnet34/cifar100/snvr.yaml --local_rank 0 --data-path ../data --tag 0 --seed 0
+python -m torch.distributed.launch --use_env grad_norm_trace.py --cfg config/resnet34/cifar100/snr.yaml --local_rank 0 --data-path ../data --tag 0 --seed 0
+python -m torch.distributed.launch --use_env grad_norm_trace.py --cfg config/resnet34/cifar100/tb.yaml --local_rank 0 --data-path ../data --tag 0 --seed 0
+python -m torch.distributed.launch --use_env grad_norm_trace.py --cfg config/resnet34/cifar100/wn.yaml --local_rank 0 --data-path ../data --tag 0 --seed 0
+python -m torch.distributed.launch --use_env grad_norm_trace.py --cfg config/resnet34/cifar100/sn.yaml --local_rank 0 --data-path ../data --tag 0 --seed 0
+
 
 for i in {0..4}
 do
-    python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/food101/baseline.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
-    python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/food101/snr.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
-    python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/food101/snvr.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
-    python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/food101/wn.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
-    python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/food101/sn.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
-    python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/food101/tb.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
+    # python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/food101/baseline.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
+    # python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/food101/snr.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
+    # python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/food101/snvr.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
+    # python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/food101/wn.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
+    # python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/food101/sn.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
+    # python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/food101/tb.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
 
 done
 

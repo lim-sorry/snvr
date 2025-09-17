@@ -222,9 +222,7 @@ def train_one_epoch(config, model, criterion, data_loader, optimizer, epoch, mix
             optimizer.step(closure)
             grad_norm = None
         else:
-            grad_norm = loss_scaler(loss, optimizer, clip_grad=config.TRAIN.CLIP_GRAD,
-                                    parameters=model.parameters(), create_graph=is_second_order,
-                                    update_grad=True)
+            grad_norm = loss_scaler(loss, optimizer, parameters=model.parameters(), create_graph=is_second_order, update_grad=True)
         optimizer.zero_grad()
         if config.MODEL.NAME != 'tb':
             lr_scheduler.step_update(epoch * num_steps + idx)
