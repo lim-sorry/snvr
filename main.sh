@@ -1,27 +1,20 @@
+# python -m torch.distributed.launch --use_env grad_norm_trace.py --cfg config/resnet34/cifar100/baseline.yaml --local_rank 0 --data-path ../data --tag 0 --seed 0
+# python -m torch.distributed.launch --use_env grad_norm_trace.py --cfg config/resnet34/cifar100/snvr.yaml --local_rank 0 --data-path ../data --tag 0 --seed 0
+# python -m torch.distributed.launch --use_env grad_norm_trace.py --cfg config/resnet34/cifar100/snr.yaml --local_rank 0 --data-path ../data --tag 0 --seed 0
+# python -m torch.distributed.launch --use_env grad_norm_trace.py --cfg config/resnet34/cifar100/tb.yaml --local_rank 0 --data-path ../data --tag 0 --seed 0
+# python -m torch.distributed.launch --use_env grad_norm_trace.py --cfg config/resnet34/cifar100/wn.yaml --local_rank 0 --data-path ../data --tag 0 --seed 0
+# python -m torch.distributed.launch --use_env grad_norm_trace.py --cfg config/resnet34/cifar100/sn.yaml --local_rank 0 --data-path ../data --tag 0 --seed 0
+
 
 for i in {0..3}
 do
-    python -m torch.distributed.launch --use_env main.py --cfg config/conv2next-tiny/cifar100/snr_0.1.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
-    python -m torch.distributed.launch --use_env main.py --cfg config/conv2next-tiny/cifar100/snr_0.01.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
-    python -m torch.distributed.launch --use_env main.py --cfg config/conv2next-tiny/cifar100/snr_0.001.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
-    python -m torch.distributed.launch --use_env main.py --cfg config/conv2next-tiny/cifar100/snr_0.0001.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
-    
-    python -m torch.distributed.launch --use_env main.py --cfg config/conv2next-tiny/cifar100/snvr_0.01.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
-    python -m torch.distributed.launch --use_env main.py --cfg config/conv2next-tiny/cifar100/snvr_0.1.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
-    python -m torch.distributed.launch --use_env main.py --cfg config/conv2next-tiny/cifar100/snvr_1.0.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
-    python -m torch.distributed.launch --use_env main.py --cfg config/conv2next-tiny/cifar100/snvr_10.0.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
-
-    # python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/stl10/snr_0.1.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
-    # python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/stl10/snr_0.01.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
-    # python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/stl10/snr_0.001.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
-
-    # python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/tiny-imagenet/baseline.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
-    # python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/tiny-imagenet/snr.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
-    # python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/tiny-imagenet/snvr.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
-    # python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/tiny-imagenet/snvr_unify.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
-    # python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/tiny-imagenet/wn.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
-    # python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/tiny-imagenet/sn.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
-    # python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/tiny-imagenet/tb.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
+    python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/stl10/baseline.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
+    python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/stl10/snr.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
+    python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/stl10/snvr.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
+    python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/stl10/snvr_unify.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
+    python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/stl10/wn.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
+    python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/stl10/sn.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
+    python -m torch.distributed.launch --use_env main.py --cfg config/eswin-tiny/stl10/tb.yaml --local_rank 0 --data-path ../data --tag $i --seed $i
 
 done
 

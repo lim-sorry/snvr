@@ -190,7 +190,6 @@ def train_one_epoch(config, model, criterion, data_loader, optimizer, epoch, mix
     num_steps = len(data_loader)
     batch_time = AverageMeter()
     loss_meter = AverageMeter()
-    norm_meter = AverageMeter()
     scaler_meter = AverageMeter()
 
     start = time.time()
@@ -207,24 +206,13 @@ def train_one_epoch(config, model, criterion, data_loader, optimizer, epoch, mix
         loss = criterion(outputs, targets)
         
         if 'war' in config.MODEL.NAME:
-            loss += 5e-5 * weight_alpha(model)
+            loss += 1e-5 * weight_alpha(model)
         if 'srr' in config.MODEL.NAME:
-            loss += 5e-4 * stable_rank(model)
+            loss += 1e-4 * stable_rank(model)
 
         # this attribute is added by timm on one optimizer (adahessian)
         is_second_order = hasattr(optimizer, 'is_second_order') and optimizer.is_second_order
-        if 'lwsam' in config.MODEL.NAME:
-            def closure():
-                outputs = model(samples)
-                loss = criterion(outputs, targets)
-                loss.backward()
-                return loss
-            optimizer.step(closure)
-            grad_norm = None
-        else:
-            grad_norm = loss_scaler(loss, optimizer, clip_grad=config.TRAIN.CLIP_GRAD,
-                                    parameters=model.parameters(), create_graph=is_second_order,
-                                    update_grad=True)
+        grad_norm = loss_scaler(loss, optimizer, parameters=model.parameters(), create_graph=is_second_order, update_grad=True)
         optimizer.zero_grad()
         if config.MODEL.NAME != 'tb':
             lr_scheduler.step_update(epoch * num_steps + idx)
@@ -233,8 +221,6 @@ def train_one_epoch(config, model, criterion, data_loader, optimizer, epoch, mix
         torch.cuda.synchronize()
 
         loss_meter.update(loss.item(), targets.size(0))
-        if grad_norm is not None:  # loss_scaler return None if not update
-            norm_meter.update(grad_norm)
         scaler_meter.update(loss_scale_value)
         batch_time.update(time.time() - end)
         end = time.time()
@@ -249,7 +235,6 @@ def train_one_epoch(config, model, criterion, data_loader, optimizer, epoch, mix
                 f'eta {datetime.timedelta(seconds=int(etas))} lr {lr:.6f}\t wd {wd:.4f}\t'
                 f'time {batch_time.val:.4f} ({batch_time.avg:.4f})\t'
                 f'loss {loss_meter.val:.4f} ({loss_meter.avg:.4f})\t'
-                f'grad_norm {norm_meter.val:.4f} ({norm_meter.avg:.4f})\t'
                 f'loss_scale {scaler_meter.val:.4f} ({scaler_meter.avg:.4f})\t'
                 f'mem {memory_used:.0f}MB')
 
