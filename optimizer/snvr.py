@@ -72,6 +72,7 @@ class SGDSNVR(Optimizer):
                     else:
                         momentum_buffers.append(None)
 
+            # Pre compute spectral norms and uv
             is_snvr = snvr[0] > 0.0 or snvr[1] > 0.0
             if is_snvr:
                 sn_mean = 0.0
@@ -99,6 +100,7 @@ class SGDSNVR(Optimizer):
                     else:
                         grad = grad.add(param, alpha=weight_decay)
 
+                # Add SNVR gradients
                 if is_snvr:
                     sn = param.sn
                     uv = param.uv
@@ -172,6 +174,7 @@ class AdamWSNVR(Optimizer):
                     state['step'] += 1
                     state_steps.append(state['step'])
 
+            # Pre compute spectral norms and uv
             is_snvr = snvr[0] > 0.0 or snvr[1] > 0.0
             if is_snvr:
                 sn_mean = 0.0
@@ -200,6 +203,7 @@ class AdamWSNVR(Optimizer):
                 if weight_decay != 0:
                     param.mul_(1.0 - lr * weight_decay)
 
+                # Add SNVR gradients
                 if is_snvr:
                     sn = param.sn
                     uv = param.uv

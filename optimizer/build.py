@@ -7,11 +7,6 @@ except:
     from snvr import AdamWSNVR, SGDSNVR
 
 try:
-    from .lwsam import LWSAM, group_parameters_by_layer_type
-except:
-    from lwsam import LWSAM, group_parameters_by_layer_type
-
-try:
     from apex.optimizers import FusedAdam, FusedLAMB
 except:
     FusedAdam = None

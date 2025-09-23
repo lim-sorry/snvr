@@ -41,10 +41,9 @@ _C.DATA.NUM_WORKERS = 6
 # -----------------------------------------------------------------------------
 _C.MODEL = CN()
 # Model type
-_C.MODEL.TYPE = 'swin'
+_C.MODEL.TYPE = 'resnet34'
 # Model name
-_C.MODEL.NAME = 'swin_tiny_patch4_window7_224'
-# Pretrained weight from checkpoint, could be imagenet22k pretrained weight
+_C.MODEL.NAME = 'resnet34'
 # could be overwritten by command line argument
 _C.MODEL.PRETRAINED = ''
 # Checkpoint to resume, could be overwritten by command line argument
@@ -57,11 +56,6 @@ _C.MODEL.DROP_RATE = 0.0
 _C.MODEL.DROP_PATH_RATE = 0.1
 # Label Smoothing
 _C.MODEL.LABEL_SMOOTHING = 0.0
-
-# model specific parameters
-_C.MODEL.ESWIN = CN()
-_C.MODEL.ESWIN.PATCH_SIZE = None
-
 
 # -----------------------------------------------------------------------------
 # Training settings

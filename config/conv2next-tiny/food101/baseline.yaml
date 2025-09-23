@@ -8,7 +8,7 @@ AUG:
   RANDOM_AUGMENT: TRUE
 MODEL:
   TYPE: conv2next-tiny
-  NAME: baseline
+  NAME: wd # wd | wn | sn | tb | war | srr
   NUM_CLASSES: 101
   LABEL_SMOOTHING: 0.1
 TRAIN:

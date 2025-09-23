@@ -1,5 +1,4 @@
-from .eswin_transformer import ESwinTransformer
-from .conv2next import conv2next_tiny, conv2next_base
+from .conv2next import conv2next_tiny
 from torchvision import models
 import torch
 
@@ -18,7 +17,6 @@ def build_model(config):
         import torch.nn as nn
         layernorm = nn.LayerNorm
 
-    img_size = config.DATA.IMG_SIZE
     num_classes = config.MODEL.NUM_CLASSES
 
     if model_type == 'resnet18':
@@ -29,18 +27,6 @@ def build_model(config):
         model = models.resnet34(pretrained=False, num_classes=num_classes)
         model.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
         model.maxpool = nn.Identity()
-    elif model_type == 'eswin-tiny':
-        model = ESwinTransformer(
-            img_size=img_size,
-            patch_size=config.MODEL.ESWIN.PATCH_SIZE,
-            num_classes=num_classes,
-            embed_dim=96,
-            depths=[2,2,4,2],
-            num_heads=[3,6,12,24],
-            window_size=4,
-            mlp_ratio=2,
-            norm_layer=layernorm,
-            )
     elif model_type == 'conv2next-tiny':
         model = conv2next_tiny(num_classes=num_classes)
     else:

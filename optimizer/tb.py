@@ -248,8 +248,8 @@ class Tempbalance(object):
                 if isinstance(m, nn.Conv2d):
                     matrix = torch.flatten(matrix, start_dim=2) * math.sqrt(self.conv_norm)
                     matrix = matrix.transpose(1, 2).transpose(0, 1)
-                # eigs = torch.square(torch.svd(matrix).S.flatten())
-                eigs = torch.square(torch.linalg.svdvals(matrix).flatten())
+                eigs = torch.square(torch.svd(matrix).S.flatten())
+                # eigs = torch.square(torch.linalg.svdvals(matrix).flatten())
                 # ascending order 
                 eigs, _ = torch.sort(eigs, descending=False)
                 spectral_norm = eigs[-1].item()

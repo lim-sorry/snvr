@@ -6,7 +6,7 @@ AUG:
   RANDOM_AUGMENT: FALSE
 MODEL:
   TYPE: resnet34
-  NAME: baseline
+  NAME: wd # wd | wn | sn | tb | war | srr
   NUM_CLASSES: 200
   LABEL_SMOOTHING: 0.0
 TRAIN:

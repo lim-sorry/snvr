@@ -152,12 +152,14 @@ def main(config):
         return
 
     logger.info("Start training")
+    epoch_grad_norms = []
     start_time = time.time()
     for epoch in range(config.TRAIN.START_EPOCH, config.TRAIN.EPOCHS):
         data_loader_train.sampler.set_epoch(epoch)
 
-        train_one_epoch(config, model, criterion, data_loader_train, optimizer, epoch, mixup_fn, lr_scheduler,
+        grad_norms = train_one_epoch(config, model, criterion, data_loader_train, optimizer, epoch, mixup_fn, lr_scheduler,
                         loss_scaler)
+        epoch_grad_norms.append(grad_norms)
 
         acc1, acc5, loss = validate(config, data_loader_val, model)
         if max_acc1 < acc1:
@@ -178,6 +180,10 @@ def main(config):
         'accuracy5': max_acc5,
         'config': config,
     }
+    
+    epoch_grad_norms = np.stack(epoch_grad_norms)
+    np.save(os.path.join(config.OUTPUT, 'grad.npy'), epoch_grad_norms)
+    
     results_path = os.path.join(config.OUTPUT, 'results.pkl')
     with open(results_path, 'wb') as f:
         pickle.dump(results, f)
@@ -194,6 +200,7 @@ def train_one_epoch(config, model, criterion, data_loader, optimizer, epoch, mix
 
     start = time.time()
     end = time.time()
+    grad_norms = []
     for idx, (samples, targets) in enumerate(data_loader):
         samples = samples.cuda(non_blocking=True)
         targets = targets.cuda(non_blocking=True)
@@ -210,9 +217,9 @@ def train_one_epoch(config, model, criterion, data_loader, optimizer, epoch, mix
         if 'srr' in config.MODEL.NAME:
             loss += 1e-4 * stable_rank(model)
 
-        # this attribute is added by timm on one optimizer (adahessian)
         is_second_order = hasattr(optimizer, 'is_second_order') and optimizer.is_second_order
         grad_norm = loss_scaler(loss, optimizer, parameters=model.parameters(), create_graph=is_second_order, update_grad=True)
+        grad_norms.append(grad_norm.cpu().detach().numpy())
         optimizer.zero_grad()
         if config.MODEL.NAME != 'tb':
             lr_scheduler.step_update(epoch * num_steps + idx)
@@ -221,6 +228,7 @@ def train_one_epoch(config, model, criterion, data_loader, optimizer, epoch, mix
         torch.cuda.synchronize()
 
         loss_meter.update(loss.item(), targets.size(0))
+        
         scaler_meter.update(loss_scale_value)
         batch_time.update(time.time() - end)
         end = time.time()
@@ -237,7 +245,7 @@ def train_one_epoch(config, model, criterion, data_loader, optimizer, epoch, mix
                 f'loss {loss_meter.val:.4f} ({loss_meter.avg:.4f})\t'
                 f'loss_scale {scaler_meter.val:.4f} ({scaler_meter.avg:.4f})\t'
                 f'mem {memory_used:.0f}MB')
-
+    
     if config.MODEL.NAME == 'tb':
         untuned_lr = cosine_decay(config.TRAIN.BASE_LR, epoch, config.TRAIN.EPOCHS - config.TRAIN.WARMUP_EPOCHS)
         lr_scheduler.step(optimizer, untuned_lr)
@@ -245,6 +253,8 @@ def train_one_epoch(config, model, criterion, data_loader, optimizer, epoch, mix
     epoch_time = time.time() - start
     logger.info(f"EPOCH {epoch} training takes {datetime.timedelta(seconds=int(epoch_time))}")
 
+    grad_norms = np.stack(grad_norms).transpose()
+    return grad_norms
 
 @torch.no_grad()
 def validate(config, data_loader, model):
