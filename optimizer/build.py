@@ -32,7 +32,8 @@ def build_optimizer(config, model):
         optimizer = optim.SGD(parameters, momentum=config.TRAIN.OPTIMIZER.MOMENTUM,
                               lr=config.TRAIN.BASE_LR, weight_decay=config.TRAIN.WEIGHT_DECAY)
     elif opt_lower == 'sgdsnvr':
-        parameters = set_spectral_norm(parameters, separate=config.TRAIN.OPTIMIZER.SEPARATE, skip=config.TRAIN.OPTIMIZER.SKIP)
+        parameters = set_spectral_norm(parameters, separate=config.TRAIN.OPTIMIZER.SEPARATE, skip=config.TRAIN.OPTIMIZER.SKIP,
+                                       skip_first=config.TRAIN.OPTIMIZER.SKIP_FIRST)
         optimizer = SGDSNVR(parameters, momentum=config.TRAIN.OPTIMIZER.MOMENTUM,
                             lr=config.TRAIN.BASE_LR, weight_decay=config.TRAIN.WEIGHT_DECAY,
                             snvr=config.TRAIN.OPTIMIZER.SNVR, decouple=config.TRAIN.OPTIMIZER.DECOUPLE)
@@ -40,7 +41,8 @@ def build_optimizer(config, model):
         optimizer = optim.AdamW(parameters, eps=config.TRAIN.OPTIMIZER.EPS, betas=config.TRAIN.OPTIMIZER.BETAS,
                                 lr=config.TRAIN.BASE_LR, weight_decay=config.TRAIN.WEIGHT_DECAY)
     elif opt_lower == 'adamwsnvr':
-        parameters = set_spectral_norm(parameters, separate=config.TRAIN.OPTIMIZER.SEPARATE, skip=config.TRAIN.OPTIMIZER.SKIP)
+        parameters = set_spectral_norm(parameters, separate=config.TRAIN.OPTIMIZER.SEPARATE, skip=config.TRAIN.OPTIMIZER.SKIP,
+                                       skip_first=config.TRAIN.OPTIMIZER.SKIP_FIRST)
         optimizer = AdamWSNVR(parameters, eps=config.TRAIN.OPTIMIZER.EPS, betas=config.TRAIN.OPTIMIZER.BETAS,
                              lr=config.TRAIN.BASE_LR, weight_decay=config.TRAIN.WEIGHT_DECAY,
                              snvr=config.TRAIN.OPTIMIZER.SNVR, decouple=config.TRAIN.OPTIMIZER.DECOUPLE)
@@ -164,7 +166,8 @@ def get_finetune_param_groups(model, lr, weight_decay, get_layer_func, scales, s
         parameter_group_names[group_name]["params"].append(name)
     return list(parameter_group_vars.values())
 
-def set_spectral_norm(parameters, separate=True, skip=True):
+def set_spectral_norm(parameters, separate=True, skip=True, skip_first=True):
+    # skip: exclude the output layer (and the first layer if skip_first) from SNR/SNVR
     parameters_sn = []
     for group in parameters:
         if 'weight_decay' in group:
@@ -174,10 +177,11 @@ def set_spectral_norm(parameters, separate=True, skip=True):
 
         if skip:
             assert len(group['params']) >= 2, "Parameter group must have at least two parameters to skip"
-            group_skip = {'params':[group['params'][0],group['params'][-1]]}
+            start = 1 if skip_first else 0
+            group_skip = {'params':group['params'][:start] + [group['params'][-1]]}
             group_skip['snvr'] = (0.0, 0.0)
             parameters_sn.append(group_skip)
-            group['params'] = group['params'][1:-1]
+            group['params'] = group['params'][start:-1]
 
         if separate:
             group_conv = {'params':[]}

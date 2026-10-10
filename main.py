@@ -20,6 +20,7 @@ from data import build_loader
 from models import build_model
 from optimizer import build_optimizer
 from lr_scheduler import build_scheduler
+from optimizer.sb import apply_spectral_bound_model
 from utils import load_checkpoint, load_pretrained, save_checkpoint, NativeScalerWithGradNormCount, auto_resume_helper, reduce_tensor
 
 from optimizer.tb import Tempbalance, cosine_decay
@@ -63,6 +64,8 @@ def parse_option():
     parser.add_argument('--eval', action='store_true', help='Perform evaluation only')
     parser.add_argument('--throughput', action='store_true', help='Test throughput only')
     parser.add_argument('--seed', type=int, default=0, help='random seed for initialization')
+    parser.add_argument('--lr', type=float, help='learning rate')
+    parser.add_argument('--name', type=str, help='model name')
     
     # distributed training
     # for pytorch >= 2.0, use `os.environ['LOCAL_RANK']` instead
@@ -228,9 +231,12 @@ def train_one_epoch(config, model, criterion, data_loader, optimizer, epoch, mix
         torch.cuda.synchronize()
 
         loss_meter.update(loss.item(), targets.size(0))
-        
         scaler_meter.update(loss_scale_value)
         batch_time.update(time.time() - end)
+        
+        if config.MODEL.NAME == 'sb':
+            apply_spectral_bound_model(model, coeff=1.0)
+        
         end = time.time()
 
         if idx % config.PRINT_FREQ == 0:
@@ -338,7 +344,7 @@ if __name__ == '__main__':
         rank = -1
         world_size = -1
     torch.cuda.set_device(config.LOCAL_RANK)
-    torch.distributed.init_process_group(backend='nccl', init_method='env://', world_size=world_size, rank=rank)
+    torch.distributed.init_process_group(backend=os.environ.get('DIST_BACKEND', 'nccl'), init_method='env://', world_size=world_size, rank=rank)
     torch.distributed.barrier()
 
     seed = config.SEED + dist.get_rank()

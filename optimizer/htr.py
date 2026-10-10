@@ -1,47 +1,78 @@
 import torch
 import torch.nn as nn
 
-def weight_alpha(model):
-    alphas = []
-    for m in model.modules():
-        if not isinstance(m, (nn.Conv2d, nn.Linear)):
-            continue
-        weight = m.weight
-        # if isinstance(m, nn.Conv2d):
-        #     weight = weight.flatten(start_dim=2)
-        #     weight = weight.transpose(1,2).transpose(0,1)
-        if isinstance(m, nn.Conv2d):
-            weight = weight.flatten(start_dim=1)
-        _U, S, _V = torch.pca_lowrank(weight, q=min(weight.shape[-2:]), center=False, niter=2)
-        eigs = torch.sort(S.pow(2).flatten())[0]
-        max_eig = eigs[-1]
-        n = len(eigs)
-        k = n // 2
 
-        top_k_eigs = eigs[-k:]
-        x_nk = eigs[n - k - 1]
+def _regularized_weights(model):
+    return [m.weight for m in model.modules() if isinstance(m, (nn.Conv2d, nn.Linear))]
 
-        log_sum = torch.sum(torch.log(top_k_eigs)) - k * torch.log(x_nk)
-        alpha = 1.0 + k / (log_sum + 1e-6)
-        alphas.append(alpha * max_eig)
 
-    return sum(alphas)
+def _matrix_view(weight):
+    return weight.reshape(weight.size(0), -1)
 
-def stable_rank(model):
-    ranks = []
-    for m in model.modules():
-        if not isinstance(m, (nn.Conv2d, nn.Linear)):
-            continue
-        weight = m.weight
-        # if isinstance(m, nn.Conv2d):
-        #     weight = weight.flatten(start_dim=2)
-        #     weight = weight.transpose(1,2).transpose(0,1)
-        if isinstance(m, nn.Conv2d):
-            weight = weight.flatten(start_dim=1)
-        _U, S, _V = torch.pca_lowrank(weight, q=min(weight.shape[-2:]), center=False, niter=2)
-        rank = (S**2).sum() / (S.max()**2 + 1e-6)
-        ranks.append(rank)
-    return sum(ranks)
+
+def _singular_values(weight):
+    return torch.linalg.svdvals(_matrix_view(weight))
+
+
+def _hill_alpha(eigs, eps=1e-12):
+    eigs = eigs.sort().values.clamp_min(eps)
+    n = eigs.numel()
+    if n < 2:
+        return eigs.new_tensor(1.0)
+
+    k = max(1, n // 2)
+    threshold_idx = n - k - 1
+    threshold = (
+        eigs[threshold_idx].clamp_min(eps)
+        if threshold_idx >= 0
+        else eigs[0].clamp_min(eps)
+    )
+    top_k = eigs[-k:].clamp_min(eps)
+    denom = torch.log(top_k / threshold).sum().clamp_min(eps)
+    return 1.0 + k / denom
+
+
+def _reduce_terms(terms, reduction):
+    if not terms:
+        return None
+    stacked = torch.stack(terms)
+    if reduction == "mean":
+        return stacked.mean()
+    if reduction == "sum":
+        return stacked.sum()
+    raise ValueError(f"Unsupported reduction: {reduction}")
+
+
+def weight_alpha(model, reduction="sum"):
+    """Weighted Alpha Regularization from Xiao et al. (2023).
+
+    The penalty for each layer is alpha * log(lambda_max), where alpha is the
+    Hill estimator of the tail index and lambda_max is the largest eigenvalue of
+    W^T W, equivalently the squared largest singular value of W.
+    """
+    terms = []
+    for weight in _regularized_weights(model):
+        eigs = _singular_values(weight).pow(2)
+        alpha = _hill_alpha(eigs)
+        terms.append(alpha * torch.log(eigs.max().clamp_min(1e-12)))
+    regularization = _reduce_terms(terms, reduction)
+    if regularization is not None:
+        return regularization
+    return next(model.parameters()).new_tensor(0.0)
+
+
+def stable_rank(model, reduction="sum"):
+    """Stable Rank Regularization from Xiao et al. (2023)."""
+    terms = []
+    for weight in _regularized_weights(model):
+        singular_values = _singular_values(weight)
+        stable = singular_values.pow(2).sum() / singular_values.max().pow(2).clamp_min(1e-12)
+        terms.append(stable)
+    regularization = _reduce_terms(terms, reduction)
+    if regularization is not None:
+        return regularization
+    return next(model.parameters()).new_tensor(0.0)
+
 
 if __name__ == "__main__":
     x = torch.randn(4, 4, 3, 3)

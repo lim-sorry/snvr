@@ -1,5 +1,6 @@
 from .conv2next import conv2next_tiny
 from torchvision import models
+from timm.models.vision_transformer import VisionTransformer
 import torch
 
 def build_model(config):
@@ -29,6 +30,12 @@ def build_model(config):
         model.maxpool = nn.Identity()
     elif model_type == 'conv2next-tiny':
         model = conv2next_tiny(num_classes=num_classes)
+    elif model_type == 'vit-tiny':
+        model = VisionTransformer(img_size=config.DATA.IMG_SIZE, patch_size=config.MODEL.PATCH_SIZE, num_classes=num_classes,
+                                  embed_dim=192, depth=12, num_heads=3, mlp_ratio=4, qkv_bias=True,
+                                  drop_path_rate=config.MODEL.DROP_PATH_RATE)
+    elif model_type == 'CNN':
+        raise NotImplementedError(f"Model not implemented yet: {model_type}")
     else:
         raise NotImplementedError(f"Unkown model: {model_type}")
 

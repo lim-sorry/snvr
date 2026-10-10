@@ -177,3 +177,7 @@ poetry.toml
 pyrightconfig.json
 
 # End of https://www.toptal.com/developers/gitignore/api/python
+# local results / references not tracked
+kt/
+/*.pdf
+install-tl-unx.tar.gz

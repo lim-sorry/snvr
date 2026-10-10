@@ -56,6 +56,8 @@ _C.MODEL.DROP_RATE = 0.0
 _C.MODEL.DROP_PATH_RATE = 0.1
 # Label Smoothing
 _C.MODEL.LABEL_SMOOTHING = 0.0
+# Patch size (ViT only)
+_C.MODEL.PATCH_SIZE = 4
 
 # -----------------------------------------------------------------------------
 # Training settings
@@ -107,6 +109,8 @@ _C.TRAIN.OPTIMIZER.SNVR = (0.0, 0.0)
 _C.TRAIN.OPTIMIZER.DECOUPLE = None
 _C.TRAIN.OPTIMIZER.SEPARATE = None
 _C.TRAIN.OPTIMIZER.SKIP = None
+# If False, the first layer is also regularized (only the output layer is skipped)
+_C.TRAIN.OPTIMIZER.SKIP_FIRST = True
 
 # -----------------------------------------------------------------------------
 # Augmentation settings
@@ -239,7 +243,11 @@ def update_config(config, args):
         config.THROUGHPUT_MODE = True
     if _check_args('seed'):
         config.SEED = args.seed
-
+    if _check_args('lr'):
+        config.TRAIN.BASE_LR = args.lr
+    if _check_args('name'):
+        config.MODEL.NAME = args.name
+        
     # for acceleration
     if _check_args('fused_window_process'):
         config.FUSED_WINDOW_PROCESS = True
@@ -256,7 +264,7 @@ def update_config(config, args):
         config.LOCAL_RANK = int(os.environ['LOCAL_RANK'])
 
     # output folder
-    config.OUTPUT = os.path.join(config.OUTPUT, config.MODEL.TYPE, config.DATA.DATASET, config.MODEL.NAME, config.TAG)
+    config.OUTPUT = os.path.join(config.OUTPUT, config.MODEL.TYPE, config.DATA.DATASET, config.MODEL.NAME + '_' + str(config.TAG), str(config.SEED))
 
     config.freeze()
 
